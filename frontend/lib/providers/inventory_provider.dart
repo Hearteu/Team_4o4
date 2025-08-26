@@ -5,7 +5,6 @@ import '../models/product.dart';
 import '../models/inventory.dart';
 import '../models/transaction.dart';
 import '../services/api_service.dart';
-import '../services/dummy_data_service.dart';
 
 class InventoryProvider with ChangeNotifier {
   // Data lists
@@ -17,6 +16,7 @@ class InventoryProvider with ChangeNotifier {
 
   // Loading states
   bool _isLoading = false;
+  bool _isDataReady = false;
   String? _error;
 
   // Getters
@@ -26,6 +26,7 @@ class InventoryProvider with ChangeNotifier {
   List<Inventory> get inventory => _inventory;
   List<Transaction> get transactions => _transactions;
   bool get isLoading => _isLoading;
+  bool get isDataReady => _isDataReady;
   String? get error => _error;
 
   // Statistics
@@ -41,19 +42,88 @@ class InventoryProvider with ChangeNotifier {
   Future<void> initializeData() async {
     debugPrint('🔄 Initializing inventory data...');
     try {
+      _setLoading(true);
+
+      // Load all data first
       await Future.wait([
-        loadCategories(),
-        loadSuppliers(),
-        loadProducts(),
-        loadInventory(),
-        loadTransactions(),
-        loadStatistics(),
+        _loadCategoriesInternal(),
+        _loadSuppliersInternal(),
+        _loadProductsInternal(),
+        _loadInventoryInternal(),
+        _loadTransactionsInternal(),
       ]);
+
+      // Then calculate statistics after data is loaded
+      await _loadStatisticsInternal();
+
+      _isDataReady = true;
+      _setError(null);
       debugPrint('✅ Inventory data initialized successfully');
     } catch (e) {
       debugPrint('❌ Error initializing data: $e');
       _setError(e.toString());
+    } finally {
+      _setLoading(false);
     }
+  }
+
+  // Internal load methods (without setting loading state)
+  Future<void> _loadCategoriesInternal() async {
+    try {
+      _categories = await ApiService.getCategories();
+    } catch (e) {
+      throw Exception('Failed to load categories: $e');
+    }
+  }
+
+  Future<void> _loadSuppliersInternal() async {
+    try {
+      _suppliers = await ApiService.getSuppliers();
+    } catch (e) {
+      throw Exception('Failed to load suppliers: $e');
+    }
+  }
+
+  Future<void> _loadProductsInternal() async {
+    try {
+      _products = await ApiService.getProducts();
+    } catch (e) {
+      throw Exception('Failed to load products: $e');
+    }
+  }
+
+  Future<void> _loadInventoryInternal() async {
+    try {
+      _inventory = await ApiService.getInventory();
+    } catch (e) {
+      throw Exception('Failed to load inventory: $e');
+    }
+  }
+
+  Future<void> _loadTransactionsInternal() async {
+    try {
+      _transactions = await ApiService.getTransactions();
+    } catch (e) {
+      throw Exception('Failed to load transactions: $e');
+    }
+  }
+
+  Future<void> _loadStatisticsInternal() async {
+    try {
+      await Future.wait([
+        _loadProductStats(),
+        _loadInventorySummary(),
+        _loadTransactionSummary(),
+      ]);
+    } catch (e) {
+      throw Exception('Failed to load statistics: $e');
+    }
+  }
+
+  // Reset data ready flag when data changes
+  void _resetDataReady() {
+    _isDataReady = false;
+    notifyListeners();
   }
 
   // Set loading state
@@ -72,6 +142,7 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadCategories() async {
     try {
       _setLoading(true);
+      _resetDataReady();
       _categories = await ApiService.getCategories();
       _setError(null);
     } catch (e) {
@@ -85,6 +156,7 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadSuppliers() async {
     try {
       _setLoading(true);
+      _resetDataReady();
       _suppliers = await ApiService.getSuppliers();
       _setError(null);
     } catch (e) {
@@ -98,6 +170,7 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadProducts() async {
     try {
       _setLoading(true);
+      _resetDataReady();
       _products = await ApiService.getProducts();
       _setError(null);
     } catch (e) {
@@ -111,6 +184,7 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadInventory() async {
     try {
       _setLoading(true);
+      _resetDataReady();
       _inventory = await ApiService.getInventory();
       _setError(null);
     } catch (e) {
@@ -124,6 +198,7 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadTransactions() async {
     try {
       _setLoading(true);
+      _resetDataReady();
       _transactions = await ApiService.getTransactions();
       _setError(null);
     } catch (e) {
@@ -135,34 +210,133 @@ class InventoryProvider with ChangeNotifier {
 
   // Load statistics
   Future<void> loadStatistics() async {
+    debugPrint('🔄 Refreshing statistics...');
     try {
-      _setLoading(true);
-      await Future.wait([
-        _loadProductStats(),
-        _loadInventorySummary(),
-        _loadTransactionSummary(),
-      ]);
-      _setError(null);
+      await _loadStatisticsInternal();
+      debugPrint('✅ Statistics refreshed successfully');
     } catch (e) {
+      debugPrint('❌ Error refreshing statistics: $e');
       _setError(e.toString());
-    } finally {
-      _setLoading(false);
     }
   }
 
   Future<void> _loadProductStats() async {
-    // Use dummy data instead of API call
-    _productStats = DummyDataService.getDummyStats();
+    // Calculate real statistics from actual data
+    final lowStockCount = _products.where((product) => product.isLowStock).length;
+    final outOfStockCount = _products.where((product) => product.currentStock == 0).length;
+    
+    debugPrint('🔍 Low stock calculation:');
+    debugPrint('   Total products: ${_products.length}');
+    debugPrint('   Low stock products: $lowStockCount');
+    debugPrint('   Out of stock products: $outOfStockCount');
+    
+    // Log low stock products for debugging
+    final lowStockProducts = _products.where((product) => product.isLowStock).toList();
+    for (var product in lowStockProducts) {
+      debugPrint('   Low stock product: ${product.name} (Qty: ${product.currentStock}, isLowStock: ${product.isLowStock})');
+    }
+    
+    _productStats = {
+      'total_products': _products.length,
+      'active_products': _products.where((p) => p.isActive).length,
+      'total_categories': _categories.length,
+      'total_suppliers': _suppliers.length,
+      'total_transactions': _transactions.length,
+      'low_stock_items': lowStockCount,
+      'out_of_stock_items': outOfStockCount,
+      'total_inventory_value': _inventory.fold(
+        0.0,
+        (sum, item) => sum + item.totalValue,
+      ),
+      'monthly_revenue': _calculateMonthlyRevenue(),
+      'monthly_expenses': _calculateMonthlyExpenses(),
+    };
   }
 
   Future<void> _loadInventorySummary() async {
-    // Use dummy data instead of API call
-    _inventorySummary = DummyDataService.getDummyInventorySummary();
+    // Calculate real inventory summary from actual data
+    _inventorySummary = {
+      'total_items': _inventory.fold(0, (sum, item) => sum + item.quantity),
+      'total_value': _inventory.fold(0.0, (sum, item) => sum + item.totalValue),
+      'low_stock_count': _products.where((product) => product.isLowStock).length,
+      'out_of_stock_count': _products.where((product) => product.currentStock == 0).length,
+      'categories_count': _categories.length,
+    };
   }
 
   Future<void> _loadTransactionSummary() async {
-    // Use dummy data instead of API call
-    _transactionSummary = DummyDataService.getDummyTransactionSummary();
+    // Calculate real transaction summary from actual data
+    final now = DateTime.now();
+    final thisMonth = DateTime(now.year, now.month);
+    final thisWeek = now.subtract(Duration(days: now.weekday - 1));
+    final today = DateTime(now.year, now.month, now.day);
+
+    final monthlyTransactions = _transactions
+        .where((t) => t.createdAt.isAfter(thisMonth))
+        .toList();
+    final weeklyTransactions = _transactions
+        .where((t) => t.createdAt.isAfter(thisWeek))
+        .toList();
+    final todayTransactions = _transactions
+        .where((t) => t.createdAt.isAfter(today))
+        .toList();
+
+    final totalRevenue = _transactions
+        .where((t) => t.transactionType == TransactionType.OUT)
+        .fold(0.0, (sum, t) => sum + (t.quantity * (t.unitPrice ?? 0)));
+
+    final totalExpenses = _transactions
+        .where((t) => t.transactionType == TransactionType.IN)
+        .fold(0.0, (sum, t) => sum + (t.quantity * (t.unitPrice ?? 0)));
+
+    final monthlyRevenue = monthlyTransactions
+        .where((t) => t.transactionType == TransactionType.OUT)
+        .fold(0.0, (sum, t) => sum + (t.quantity * (t.unitPrice ?? 0)));
+
+    final monthlyExpenses = monthlyTransactions
+        .where((t) => t.transactionType == TransactionType.IN)
+        .fold(0.0, (sum, t) => sum + (t.quantity * (t.unitPrice ?? 0)));
+
+    _transactionSummary = {
+      'total_transactions': _transactions.length,
+      'total_revenue': totalRevenue,
+      'total_expenses': totalExpenses,
+      'net_profit': totalRevenue - totalExpenses,
+      'transactions_today': todayTransactions.length,
+      'transactions_this_week': weeklyTransactions.length,
+      'transactions_this_month': monthlyTransactions.length,
+      'monthly_revenue': monthlyRevenue,
+      'monthly_expenses': monthlyExpenses,
+      'monthly_profit': monthlyRevenue - monthlyExpenses,
+    };
+  }
+
+  // Calculate monthly revenue from transactions
+  double _calculateMonthlyRevenue() {
+    final now = DateTime.now();
+    final thisMonth = DateTime(now.year, now.month);
+
+    return _transactions
+        .where(
+          (t) =>
+              t.transactionType == TransactionType.OUT &&
+              t.createdAt.isAfter(thisMonth),
+        )
+        .fold(0.0, (sum, t) => sum + (t.quantity * (t.unitPrice ?? 0)));
+  }
+
+  // Calculate monthly expenses from transactions
+  double _calculateMonthlyExpenses() {
+    final now = DateTime.now();
+    final thisMonth = DateTime(now.year, now.month);
+
+    return _transactions
+        .where(
+          (t) =>
+              t.transactionType == TransactionType.IN &&
+              t.createdAt.isAfter(thisMonth),
+        )
+        .fold(0.0, (sum, t) => sum + (t.quantity * (t.unitPrice ?? 0)));
   }
 
   // Create category
@@ -213,8 +387,8 @@ class InventoryProvider with ChangeNotifier {
       _setLoading(true);
       final transaction = await ApiService.createTransaction(transactionData);
       _transactions.insert(0, transaction);
-      await loadInventory(); // Refresh inventory after transaction
-      await loadStatistics(); // Refresh statistics
+      await _loadInventoryInternal(); // Refresh inventory after transaction
+      await _loadStatisticsInternal(); // Refresh statistics with new data
       _setError(null);
     } catch (e) {
       _setError(e.toString());
@@ -272,6 +446,139 @@ class InventoryProvider with ChangeNotifier {
 
   // Refresh all data
   Future<void> refreshData() async {
-    await initializeData();
+    debugPrint('🔄 Refreshing all data...');
+    try {
+      _isDataReady = false;
+      _setLoading(true);
+
+      // Load all data first
+      await Future.wait([
+        _loadCategoriesInternal(),
+        _loadSuppliersInternal(),
+        _loadProductsInternal(),
+        _loadInventoryInternal(),
+        _loadTransactionsInternal(),
+      ]);
+
+      // Then calculate statistics after data is loaded
+      await _loadStatisticsInternal();
+
+      _isDataReady = true;
+      _setError(null);
+      debugPrint('✅ Data refreshed successfully');
+    } catch (e) {
+      debugPrint('❌ Error refreshing data: $e');
+      _setError(e.toString());
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Refresh statistics only
+  Future<void> refreshStatistics() async {
+    debugPrint('🔄 Refreshing statistics...');
+    try {
+      await loadStatistics();
+      debugPrint('✅ Statistics refreshed successfully');
+    } catch (e) {
+      debugPrint('❌ Error refreshing statistics: $e');
+      _setError(e.toString());
+    }
+  }
+
+  // Real-time statistics getters
+  Map<String, dynamic> get realTimeStats {
+    if (!_isDataReady) {
+      return {
+        'total_products': 0,
+        'active_products': 0,
+        'total_categories': 0,
+        'total_suppliers': 0,
+        'total_transactions': 0,
+        'low_stock_items': 0,
+        'out_of_stock_items': 0,
+        'total_inventory_value': 0.0,
+        'total_inventory_items': 0,
+      };
+    }
+
+    return {
+      'total_products': _products.length,
+      'active_products': _products.where((p) => p.isActive).length,
+      'total_categories': _categories.length,
+      'total_suppliers': _suppliers.length,
+      'total_transactions': _transactions.length,
+      'low_stock_items': _products.where((product) => product.isLowStock).length,
+      'out_of_stock_items': _products.where((product) => product.currentStock == 0).length,
+      'total_inventory_value': _inventory.fold(
+        0.0,
+        (sum, item) => sum + item.totalValue,
+      ),
+      'total_inventory_items': _inventory.fold(
+        0,
+        (sum, item) => sum + item.quantity,
+      ),
+    };
+  }
+
+  Map<String, dynamic> get realTimeTransactionStats {
+    if (!_isDataReady) {
+      return {
+        'total_transactions': 0,
+        'total_revenue': 0.0,
+        'total_expenses': 0.0,
+        'net_profit': 0.0,
+        'transactions_today': 0,
+        'transactions_this_week': 0,
+        'transactions_this_month': 0,
+        'monthly_revenue': 0.0,
+        'monthly_expenses': 0.0,
+        'monthly_profit': 0.0,
+      };
+    }
+
+    final now = DateTime.now();
+    final thisMonth = DateTime(now.year, now.month);
+    final thisWeek = now.subtract(Duration(days: now.weekday - 1));
+    final today = DateTime(now.year, now.month, now.day);
+
+    final monthlyTransactions = _transactions
+        .where((t) => t.createdAt.isAfter(thisMonth))
+        .toList();
+    final weeklyTransactions = _transactions
+        .where((t) => t.createdAt.isAfter(thisWeek))
+        .toList();
+    final todayTransactions = _transactions
+        .where((t) => t.createdAt.isAfter(today))
+        .toList();
+
+    final totalRevenue = _transactions
+        .where((t) => t.transactionType == TransactionType.OUT)
+        .fold(0.0, (sum, t) => sum + (t.quantity * (t.unitPrice ?? 0)));
+
+    final totalExpenses = _transactions
+        .where((t) => t.transactionType == TransactionType.IN)
+        .fold(0.0, (sum, t) => sum + (t.quantity * (t.unitPrice ?? 0)));
+
+    final monthlyRevenue = monthlyTransactions
+        .where((t) => t.transactionType == TransactionType.OUT)
+        .fold(0.0, (sum, t) => sum + (t.quantity * (t.unitPrice ?? 0)));
+
+    final monthlyExpenses = monthlyTransactions
+        .where((t) => t.transactionType == TransactionType.IN)
+        .fold(0.0, (sum, t) => sum + (t.quantity * (t.unitPrice ?? 0)));
+
+    return {
+      'total_transactions': _transactions.length,
+      'total_revenue': totalRevenue,
+      'total_expenses': totalExpenses,
+      'net_profit': totalRevenue - totalExpenses,
+      'transactions_today': todayTransactions.length,
+      'transactions_this_week': weeklyTransactions.length,
+      'transactions_this_month': monthlyTransactions.length,
+      'monthly_revenue': monthlyRevenue,
+      'monthly_expenses': monthlyExpenses,
+      'monthly_profit': monthlyRevenue - monthlyExpenses,
+    };
   }
 }

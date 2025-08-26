@@ -121,12 +121,34 @@ class DashboardScreen extends StatelessWidget {
     BuildContext context,
     InventoryProvider provider,
   ) {
-    final stats = provider.productStats;
-    final inventorySummary = provider.inventorySummary;
-
-    if (stats == null || inventorySummary == null) {
-      return const Center(child: CircularProgressIndicator());
+    // Show loading if data is not ready yet
+    if (provider.isLoading || !provider.isDataReady) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Statistics',
+            style: AppTheme.heading4.copyWith(color: AppTheme.textPrimary),
+          ),
+          const SizedBox(height: AppTheme.spacingM),
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppTheme.spacingL),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        ],
+      );
     }
+
+    // Use real-time stats if cached stats are not available
+    final stats = provider.productStats ?? provider.realTimeStats;
+    final inventorySummary =
+        provider.inventorySummary ??
+        {
+          'total_value': provider.realTimeStats['total_inventory_value'],
+          'total_items': provider.realTimeStats['total_inventory_items'],
+        };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +174,7 @@ class DashboardScreen extends StatelessWidget {
               child: StatCard(
                 title: 'Total Value',
                 value:
-                    '\$${_formatCurrency(inventorySummary['total_value'] ?? 0)}',
+                    '₱${_formatCurrency(inventorySummary['total_value'] ?? 0)}',
                 icon: Icons.attach_money,
                 color: AppTheme.successColor,
                 subtitle: 'Inventory value',
@@ -166,7 +188,7 @@ class DashboardScreen extends StatelessWidget {
             Expanded(
               child: StatCard(
                 title: 'Low Stock',
-                value: '${stats['low_stock_products'] ?? 0}',
+                value: '${stats['low_stock_items'] ?? 0}',
                 icon: Icons.warning,
                 color: AppTheme.warningColor,
                 subtitle: 'Need attention',
@@ -176,7 +198,7 @@ class DashboardScreen extends StatelessWidget {
             Expanded(
               child: StatCard(
                 title: 'Out of Stock',
-                value: '${stats['out_of_stock_products'] ?? 0}',
+                value: '${stats['out_of_stock_items'] ?? 0}',
                 icon: Icons.remove_shopping_cart,
                 color: AppTheme.errorColor,
                 subtitle: 'Requires restocking',

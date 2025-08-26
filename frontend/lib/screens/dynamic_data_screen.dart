@@ -93,8 +93,8 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
                 'Product': item.productName,
                 'SKU': item.productSku,
                 'Quantity': item.quantity.toString(),
-                'Unit Price': '\$${item.unitPrice.toStringAsFixed(2)}',
-                'Total Value': '\$${item.totalValue.toStringAsFixed(2)}',
+                'Unit Price': '₱${item.unitPrice.toStringAsFixed(2)}',
+                'Total Value': '₱${item.totalValue.toStringAsFixed(2)}',
                 'Low Stock': item.isLowStock ? 'Yes' : 'No',
               },
             )
@@ -128,7 +128,7 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
                 'Product': product.name,
                 'SKU': product.sku,
                 'Category': product.categoryName,
-                'Unit Price': '\$${product.unitPrice.toStringAsFixed(2)}',
+                'Unit Price': '₱${product.unitPrice.toStringAsFixed(2)}',
                 'Reorder Level': product.reorderLevel.toString(),
                 'Current Stock': product.currentStock.toString(),
               },
@@ -168,7 +168,7 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
                 'Type': trans.transactionTypeDisplay,
                 'Quantity': trans.quantity.toString(),
                 'Amount':
-                    '\$${(trans.quantity * (trans.unitPrice ?? 0)).toStringAsFixed(2)}',
+                    '₱${(trans.quantity * (trans.unitPrice ?? 0)).toStringAsFixed(2)}',
                 'Date': _formatDate(trans.createdAt),
               },
             )
@@ -199,8 +199,8 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
                 'Product': item.productName,
                 'SKU': item.productSku,
                 'Current Stock': item.quantity.toString(),
-                'Unit Price': '\$${item.unitPrice.toStringAsFixed(2)}',
-                'Total Value': '\$${item.totalValue.toStringAsFixed(2)}',
+                'Unit Price': '₱${item.unitPrice.toStringAsFixed(2)}',
+                'Total Value': '₱${item.totalValue.toStringAsFixed(2)}',
               },
             )
             .toList();
@@ -252,7 +252,7 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
                 'Product': product.name,
                 'SKU': product.sku,
                 'Stock': product.currentStock.toString(),
-                'Price': '\$${product.unitPrice.toStringAsFixed(2)}',
+                'Price': '₱${product.unitPrice.toStringAsFixed(2)}',
               });
             }
           }
@@ -281,7 +281,7 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
               'Product': product.name,
               'SKU': product.sku,
               'Stock': product.currentStock.toString(),
-              'Price': '\$${product.unitPrice.toStringAsFixed(2)}',
+              'Price': '₱${product.unitPrice.toStringAsFixed(2)}',
             });
           }
 
@@ -375,8 +375,8 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
                     'Product': item.productName,
                     'SKU': item.productSku,
                     'Quantity': item.quantity.toString(),
-                    'Unit Price': '\$${item.unitPrice.toStringAsFixed(2)}',
-                    'Total Value': '\$${item.totalValue.toStringAsFixed(2)}',
+                    'Unit Price': '₱${item.unitPrice.toStringAsFixed(2)}',
+                    'Total Value': '₱${item.totalValue.toStringAsFixed(2)}',
                     'Low Stock': item.isLowStock ? 'Yes' : 'No',
                   },
                 )
@@ -397,17 +397,16 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
                     'Product': item.productName,
                     'SKU': item.productSku,
                     'Quantity': item.quantity.toString(),
-                    'Unit Price': '\$${item.unitPrice.toStringAsFixed(2)}',
-                    'Total Value': '\$${item.totalValue.toStringAsFixed(2)}',
+                    'Unit Price': '₱${item.unitPrice.toStringAsFixed(2)}',
+                    'Total Value': '₱${item.totalValue.toStringAsFixed(2)}',
                     'Low Stock': item.isLowStock ? 'Yes' : 'No',
                   },
                 )
                 .toList()
               ..sort(
-                (a, b) => double.parse(b['Total Value'].replaceAll('\$', ''))
-                    .compareTo(
-                      double.parse(a['Total Value'].replaceAll('\$', '')),
-                    ),
+                (a, b) => double.parse(
+                  b['Total Value'].replaceAll('₱', ''),
+                ).compareTo(double.parse(a['Total Value'].replaceAll('₱', ''))),
               );
         break;
 
@@ -420,16 +419,16 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
                     'Product': item.productName,
                     'SKU': item.productSku,
                     'Quantity': item.quantity.toString(),
-                    'Unit Price': '\$${item.unitPrice.toStringAsFixed(2)}',
-                    'Total Value': '\$${item.totalValue.toStringAsFixed(2)}',
+                    'Unit Price': '₱${item.unitPrice.toStringAsFixed(2)}',
+                    'Total Value': '₱${item.totalValue.toStringAsFixed(2)}',
                     'Low Stock': item.isLowStock ? 'Yes' : 'No',
                   },
                 )
                 .toList()
               ..sort(
                 (a, b) => double.parse(
-                  b['Unit Price'].replaceAll('\$', ''),
-                ).compareTo(double.parse(a['Unit Price'].replaceAll('\$', ''))),
+                  b['Unit Price'].replaceAll('₱', ''),
+                ).compareTo(double.parse(a['Unit Price'].replaceAll('₱', ''))),
               );
         break;
 
@@ -442,8 +441,8 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
                     'Product': item.productName,
                     'SKU': item.productSku,
                     'Quantity': item.quantity.toString(),
-                    'Unit Price': '\$${item.unitPrice.toStringAsFixed(2)}',
-                    'Total Value': '\$${item.totalValue.toStringAsFixed(2)}',
+                    'Unit Price': '₱${item.unitPrice.toStringAsFixed(2)}',
+                    'Total Value': '₱${item.totalValue.toStringAsFixed(2)}',
                     'Low Stock': item.isLowStock ? 'Yes' : 'No',
                   },
                 )
@@ -659,8 +658,8 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
           'Product': item.productName,
           'SKU': item.productSku,
           'Quantity': item.quantity.toString(),
-          'Unit Price': '\$${item.unitPrice.toStringAsFixed(2)}',
-          'Total Value': '\$${item.totalValue.toStringAsFixed(2)}',
+          'Unit Price': '₱${item.unitPrice.toStringAsFixed(2)}',
+          'Total Value': '₱${item.totalValue.toStringAsFixed(2)}',
           'Low Stock': item.isLowStock ? 'Yes' : 'No',
         });
       }
@@ -687,8 +686,8 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
             'Product': item.productName,
             'SKU': item.productSku,
             'Quantity': item.quantity.toString(),
-            'Unit Price': '\$${item.unitPrice.toStringAsFixed(2)}',
-            'Total Value': '\$${item.totalValue.toStringAsFixed(2)}',
+            'Unit Price': '₱${item.unitPrice.toStringAsFixed(2)}',
+            'Total Value': '₱${item.totalValue.toStringAsFixed(2)}',
             'Low Stock': item.isLowStock ? 'Yes' : 'No',
           });
         }

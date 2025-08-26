@@ -513,8 +513,8 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
               child: ScaleTransition(
                 scale: _scaleAnimation,
                 child: Container(
-                  width: 320,
-                  height: 400,
+                  width: 450,
+                  height: 500,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
