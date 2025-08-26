@@ -1,19 +1,20 @@
-from django.shortcuts import render
-from rest_framework import viewsets, status, filters
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Sum, Count, F
-from django.utils import timezone
 from datetime import timedelta
 
-from .models import Category, Supplier, Product, Inventory, Transaction
-from .serializers import (
-    CategorySerializer, CategoryDetailSerializer,
-    SupplierSerializer, SupplierDetailSerializer,
-    ProductSerializer, ProductDetailSerializer,
-    InventorySerializer, TransactionSerializer
-)
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
+from django.shortcuts import render
+from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from .filters import InventoryFilter
+from .models import Category, Inventory, Product, Supplier, Transaction
+from .serializers import (CategoryDetailSerializer, CategorySerializer,
+                          InventorySerializer, ProductDetailSerializer,
+                          ProductSerializer, SupplierDetailSerializer,
+                          SupplierSerializer, TransactionSerializer)
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     """ViewSet for Category CRUD operations"""
@@ -154,11 +155,17 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
-    """ViewSet for Inventory read operations"""
-    queryset = Inventory.objects.select_related('product', 'product__category', 'product__supplier')
+    queryset = (Inventory.objects
+        .select_related('product','product__category','product__supplier')
+        .annotate(
+            total_value=ExpressionWrapper(
+                F('quantity') * F('product__unit_price'),
+                output_field=DecimalField(max_digits=12, decimal_places=2),
+            )
+        ))
     serializer_class = InventorySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['is_low_stock']
+    filterset_class = InventoryFilter
     search_fields = ['product__name', 'product__sku']
     ordering_fields = ['quantity', 'last_updated', 'total_value']
     ordering = ['-quantity']
