@@ -172,7 +172,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'AI Assistant',
+                                    'MedEasy AI',
                                     style: GoogleFonts.poppins(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -358,6 +358,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
                       fontSize: 14,
                     ),
                   ),
+
                   if (!message.isUser) ...[const SizedBox(height: 8)],
                 ],
               ),
