@@ -6,6 +6,12 @@ import '../theme/app_theme.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/recent_transactions_widget.dart';
+import '../widgets/product_form.dart';
+import '../widgets/bulk_stock_dialog.dart';
+import '../screens/export_import_screen.dart';
+import '../screens/inventory_screen.dart';
+import '../screens/expiration_screen.dart';
+import '../screens/transactions_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -60,6 +66,10 @@ class DashboardScreen extends StatelessWidget {
 
                       // Statistics Cards
                       _buildStatisticsSection(context, provider),
+                      const SizedBox(height: AppTheme.spacingL),
+
+                      // Recommendations
+                      _buildRecommendationsSection(context, provider),
                       const SizedBox(height: AppTheme.spacingL),
 
                       // Quick Actions
@@ -210,6 +220,160 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildRecommendationsSection(
+    BuildContext context,
+    InventoryProvider provider,
+  ) {
+    // Show loading if data is not ready yet
+    if (provider.isLoading || !provider.isDataReady) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Recommendations',
+            style: AppTheme.heading4.copyWith(color: AppTheme.textPrimary),
+          ),
+          const SizedBox(height: AppTheme.spacingM),
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppTheme.spacingL),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final stats = provider.productStats ?? provider.realTimeStats;
+    final lowStockCount = stats['low_stock_items'] ?? 0;
+    final outOfStockCount = stats['out_of_stock_items'] ?? 0;
+    final totalProducts = stats['total_products'] ?? 0;
+
+    List<Map<String, dynamic>> recommendations = [];
+
+    // Generate recommendations based on current data
+    if (outOfStockCount > 0) {
+      recommendations.add({
+        'title': 'Restock Urgent Items',
+        'description':
+            '$outOfStockCount products are out of stock and need immediate attention.',
+        'icon': Icons.priority_high,
+        'color': AppTheme.errorColor,
+        'action': 'View Out of Stock',
+      });
+    }
+
+    if (lowStockCount > 0) {
+      recommendations.add({
+        'title': 'Monitor Low Stock',
+        'description':
+            '$lowStockCount products are running low and may need reordering soon.',
+        'icon': Icons.warning,
+        'color': AppTheme.warningColor,
+        'action': 'View Low Stock',
+      });
+    }
+
+    if (totalProducts < 50) {
+      recommendations.add({
+        'title': 'Expand Product Catalog',
+        'description':
+            'Consider adding more products to diversify your inventory.',
+        'icon': Icons.add_business,
+        'color': AppTheme.infoColor,
+        'action': 'Add Products',
+      });
+    }
+
+    // Add general recommendations
+    recommendations.add({
+      'title': 'Review Expiring Items',
+      'description': 'Check for items approaching expiration to avoid waste.',
+      'icon': Icons.schedule,
+      'color': AppTheme.warningColor,
+      'action': 'View Expiration',
+    });
+
+    recommendations.add({
+      'title': 'Generate Reports',
+      'description':
+          'Create detailed reports to analyze your inventory performance.',
+      'icon': Icons.analytics,
+      'color': AppTheme.primaryColor,
+      'action': 'Export Data',
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Recommendations',
+          style: AppTheme.heading4.copyWith(color: AppTheme.textPrimary),
+        ),
+        const SizedBox(height: AppTheme.spacingM),
+        ...recommendations
+            .take(3)
+            .map(
+              (rec) => Container(
+                margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
+                padding: const EdgeInsets.all(AppTheme.spacingM),
+                decoration: AppTheme.cardDecoration.copyWith(
+                  border: Border.all(
+                    color: rec['color'].withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppTheme.spacingM),
+                      decoration: BoxDecoration(
+                        color: rec['color'].withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                      ),
+                      child: Icon(rec['icon'], color: rec['color'], size: 24),
+                    ),
+                    const SizedBox(width: AppTheme.spacingM),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            rec['title'],
+                            style: AppTheme.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: AppTheme.spacingS),
+                          Text(
+                            rec['description'],
+                            style: AppTheme.bodySmall.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          _handleRecommendationAction(context, rec['action']),
+                      child: Text(
+                        rec['action'],
+                        style: AppTheme.bodySmall.copyWith(
+                          color: rec['color'],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+      ],
+    );
+  }
+
   Widget _buildQuickActionsSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,9 +390,7 @@ class DashboardScreen extends StatelessWidget {
                 title: 'Add Product',
                 icon: Icons.add_box,
                 color: AppTheme.primaryColor,
-                onTap: () {
-                  // TODO: Navigate to add product screen
-                },
+                onTap: () => _showAddProductDialog(context),
               ),
             ),
             const SizedBox(width: AppTheme.spacingM),
@@ -237,9 +399,7 @@ class DashboardScreen extends StatelessWidget {
                 title: 'Stock In',
                 icon: Icons.input,
                 color: AppTheme.successColor,
-                onTap: () {
-                  // TODO: Navigate to stock in screen
-                },
+                onTap: () => _showBulkStockDialog(context),
               ),
             ),
           ],
@@ -252,20 +412,16 @@ class DashboardScreen extends StatelessWidget {
                 title: 'Stock Out',
                 icon: Icons.output,
                 color: AppTheme.warningColor,
-                onTap: () {
-                  // TODO: Navigate to stock out screen
-                },
+                onTap: () => _showStockAdjustmentDialog(context),
               ),
             ),
             const SizedBox(width: AppTheme.spacingM),
             Expanded(
               child: QuickActionCard(
-                title: 'Reports',
+                title: 'Export Data',
                 icon: Icons.analytics,
                 color: AppTheme.infoColor,
-                onTap: () {
-                  // TODO: Navigate to reports screen
-                },
+                onTap: () => _navigateToExportScreen(context),
               ),
             ),
           ],
@@ -292,7 +448,12 @@ class DashboardScreen extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                // TODO: Navigate to transactions screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TransactionsScreen(),
+                  ),
+                );
               },
               child: Text(
                 'View All',
@@ -415,5 +576,64 @@ class DashboardScreen extends StatelessWidget {
 
   String _formatCurrency(double amount) {
     return NumberFormat('#,##0.00').format(amount);
+  }
+
+  void _handleRecommendationAction(BuildContext context, String action) {
+    switch (action) {
+      case 'View Out of Stock':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const InventoryScreen()),
+        );
+        break;
+      case 'View Low Stock':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const InventoryScreen()),
+        );
+        break;
+      case 'Add Products':
+        _showAddProductDialog(context);
+        break;
+      case 'View Expiration':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ExpirationScreen()),
+        );
+        break;
+      case 'Export Data':
+        _navigateToExportScreen(context);
+        break;
+    }
+  }
+
+  void _showAddProductDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const ProductFormDialog(),
+    );
+  }
+
+  void _showStockAdjustmentDialog(BuildContext context) {
+    // Show a simple message for now - in a real app, you'd show a product selection dialog
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Navigate to Inventory screen to adjust stock for specific products',
+        ),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showBulkStockDialog(BuildContext context) {
+    showDialog(context: context, builder: (context) => const BulkStockDialog());
+  }
+
+  void _navigateToExportScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ExportImportScreen()),
+    );
   }
 }

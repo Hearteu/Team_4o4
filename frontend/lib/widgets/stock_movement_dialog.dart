@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/inventory_provider.dart';
 import '../models/inventory.dart';
+import '../models/transaction.dart';
 
 class StockMovementDialog extends StatelessWidget {
   final Inventory inventory;
@@ -108,16 +109,51 @@ class StockMovementDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            Text('Recent Stock Movements', style: AppTheme.heading4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Recent Stock Movements', style: AppTheme.heading4),
+                Consumer<InventoryProvider>(
+                  builder: (context, provider, child) {
+                    final productTransactions = provider.transactions
+                        .where((t) => t.product == inventory.product)
+                        .toList();
+
+                    final totalIn = productTransactions
+                        .where((t) => t.transactionType == TransactionType.IN)
+                        .fold<int>(0, (sum, t) => sum + t.quantity);
+
+                    final totalOut = productTransactions
+                        .where((t) => t.transactionType == TransactionType.OUT)
+                        .fold<int>(0, (sum, t) => sum + t.quantity.abs());
+
+                    return Text(
+                      'Total: +$totalIn / -$totalOut',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: AppTheme.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
             // Stock Movement List
             Expanded(
               child: Consumer<InventoryProvider>(
                 builder: (context, provider, child) {
-                  final productTransactions = provider.transactions
-                      .where((t) => t.product == inventory.product)
-                      .take(20) // Show last 20 transactions
-                      .toList();
+                  final productTransactions =
+                      provider.transactions
+                          .where((t) => t.product == inventory.product)
+                          .toList()
+                        ..sort(
+                          (a, b) => b.createdAt.compareTo(a.createdAt),
+                        ); // Sort by newest first
+
+                  final recentTransactions = productTransactions
+                      .take(20)
+                      .toList(); // Show last 20 transactions
 
                   if (productTransactions.isEmpty) {
                     return Center(
@@ -149,9 +185,9 @@ class StockMovementDialog extends StatelessWidget {
                   }
 
                   return ListView.builder(
-                    itemCount: productTransactions.length,
+                    itemCount: recentTransactions.length,
                     itemBuilder: (context, index) {
-                      final transaction = productTransactions[index];
+                      final transaction = recentTransactions[index];
                       return _MovementCard(transaction: transaction);
                     },
                   );
@@ -177,20 +213,19 @@ class StockMovementDialog extends StatelessWidget {
 }
 
 class _MovementCard extends StatelessWidget {
-  final dynamic
-  transaction; // Using dynamic for now, should be Transaction model
+  final Transaction transaction;
 
   const _MovementCard({required this.transaction});
 
   @override
   Widget build(BuildContext context) {
-    final isStockIn = transaction['transaction_type'] == 'IN';
-    final quantity = transaction['quantity'] ?? 0;
-    final totalAmount = transaction['total_amount'] ?? 0;
-    final reason = transaction['reason'] ?? 'No reason provided';
-    final timestamp = transaction['created_at'] != null
-        ? DateTime.parse(transaction['created_at'])
-        : DateTime.now();
+    final isStockIn = transaction.transactionType == TransactionType.IN;
+    final quantity = transaction.quantity;
+    final totalAmount = transaction.totalAmount ?? 0.0;
+    final reason = transaction.notes.isNotEmpty
+        ? transaction.notes
+        : 'No reason provided';
+    final timestamp = transaction.createdAt;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -231,7 +266,7 @@ class _MovementCard extends StatelessWidget {
                       ),
                       const Spacer(),
                       Text(
-                        '${isStockIn ? '+' : '-'}$quantity units',
+                        '${isStockIn ? '+' : '-'}${quantity.abs()} units',
                         style: AppTheme.bodyMedium.copyWith(
                           fontWeight: FontWeight.bold,
                           color: isStockIn
@@ -249,11 +284,22 @@ class _MovementCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    _formatDate(timestamp),
-                    style: AppTheme.bodySmall.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        'Ref: ${transaction.reference}',
+                        style: AppTheme.bodySmall.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        _formatDate(timestamp),
+                        style: AppTheme.bodySmall.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -271,7 +317,9 @@ class _MovementCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '₱${(totalAmount / quantity).toStringAsFixed(2)}/unit',
+                  quantity != 0
+                      ? '₱${(totalAmount / quantity.abs()).toStringAsFixed(2)}/unit'
+                      : '₱0.00/unit',
                   style: AppTheme.bodySmall.copyWith(
                     color: AppTheme.textSecondary,
                   ),

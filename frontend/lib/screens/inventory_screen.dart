@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/inventory_provider.dart';
 import '../models/inventory.dart';
-import '../models/product.dart';
+import '../models/transaction.dart';
 import '../widgets/stock_adjustment_dialog.dart';
 import '../widgets/bulk_stock_dialog.dart';
 import '../widgets/stock_movement_dialog.dart';
@@ -220,7 +220,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _selectedCategory,
+                      initialValue: _selectedCategory,
                       decoration: const InputDecoration(
                         labelText: 'Category',
                         border: OutlineInputBorder(),
@@ -247,7 +247,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                   const SizedBox(width: 16),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _selectedStockStatus,
+                      initialValue: _selectedStockStatus,
                       decoration: const InputDecoration(
                         labelText: 'Stock Status',
                         border: OutlineInputBorder(),
@@ -772,31 +772,33 @@ class _AlertSection extends StatelessWidget {
 }
 
 class _TransactionCard extends StatelessWidget {
-  final dynamic
-  transaction; // Using dynamic for now, should be Transaction model
+  final Transaction transaction;
 
   const _TransactionCard({required this.transaction});
 
   @override
   Widget build(BuildContext context) {
+    final isStockIn = transaction.transactionType == TransactionType.IN;
+    final totalAmount = transaction.totalAmount ?? 0.0;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: transaction['transaction_type'] == 'IN'
+          backgroundColor: isStockIn
               ? AppTheme.successColor
               : AppTheme.errorColor,
           child: Icon(
-            transaction['transaction_type'] == 'IN' ? Icons.add : Icons.remove,
+            isStockIn ? Icons.add : Icons.remove,
             color: Colors.white,
           ),
         ),
-        title: Text(transaction['product_name'] ?? 'Unknown Product'),
+        title: Text(transaction.productName),
         subtitle: Text(
-          '${transaction['transaction_type']} - ${transaction['quantity']} units',
+          '${transaction.transactionTypeDisplay} - ${transaction.quantity.abs()} units',
         ),
         trailing: Text(
-          '₱${(transaction['total_amount'] ?? 0).toStringAsFixed(2)}',
+          '₱${totalAmount.toStringAsFixed(2)}',
           style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold),
         ),
       ),

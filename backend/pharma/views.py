@@ -161,6 +161,97 @@ class StockBatchViewSet(viewsets.ModelViewSet):
     ordering_fields = ['expiry_date', 'quantity', 'received_at', 'updated_at']
     ordering = ['expiry_date']
 
+    @action(detail=False, methods=['get'])
+    def expired(self, request):
+        """Get expired stock batches"""
+        today = timezone.now().date()
+        expired_batches = self.get_queryset().filter(
+            expiry_date__isnull=False,
+            expiry_date__lt=today,
+            quantity__gt=0
+        )
+        return Response(self.get_serializer(expired_batches, many=True).data)
+
+    @action(detail=False, methods=['get'])
+    def expiring_soon(self, request):
+        """Get batches expiring within 30 days"""
+        today = timezone.now().date()
+        thirty_days_from_now = today + timedelta(days=30)
+        expiring_batches = self.get_queryset().filter(
+            expiry_date__isnull=False,
+            expiry_date__gte=today,
+            expiry_date__lte=thirty_days_from_now,
+            quantity__gt=0
+        )
+        return Response(self.get_serializer(expiring_batches, many=True).data)
+
+    @action(detail=False, methods=['get'])
+    def expiring_this_week(self, request):
+        """Get batches expiring within 7 days"""
+        today = timezone.now().date()
+        week_from_now = today + timedelta(days=7)
+        urgent_batches = self.get_queryset().filter(
+            expiry_date__isnull=False,
+            expiry_date__gte=today,
+            expiry_date__lte=week_from_now,
+            quantity__gt=0
+        )
+        return Response(self.get_serializer(urgent_batches, many=True).data)
+
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """Get expiration summary statistics"""
+        today = timezone.now().date()
+        thirty_days_from_now = today + timedelta(days=30)
+        week_from_now = today + timedelta(days=7)
+
+        # Get batches with expiry dates
+        batches_with_expiry = self.get_queryset().filter(expiry_date__isnull=False)
+        
+        # Calculate statistics
+        expired_batches = batches_with_expiry.filter(
+            expiry_date__lt=today,
+            quantity__gt=0
+        )
+        expiring_soon = batches_with_expiry.filter(
+            expiry_date__gte=today,
+            expiry_date__lte=thirty_days_from_now,
+            quantity__gt=0
+        )
+        expiring_this_week = batches_with_expiry.filter(
+            expiry_date__gte=today,
+            expiry_date__lte=week_from_now,
+            quantity__gt=0
+        )
+
+        # Calculate totals
+        total_expired_quantity = expired_batches.aggregate(
+            total=Sum('quantity')
+        )['total'] or 0
+        
+        total_expired_value = expired_batches.aggregate(
+            total=Sum(F('quantity') * F('unit_cost'))
+        )['total'] or 0
+        
+        total_expiring_soon_quantity = expiring_soon.aggregate(
+            total=Sum('quantity')
+        )['total'] or 0
+        
+        total_expiring_soon_value = expiring_soon.aggregate(
+            total=Sum(F('quantity') * F('unit_cost'))
+        )['total'] or 0
+
+        return Response({
+            'total_batches_with_expiry': batches_with_expiry.count(),
+            'expired_batches_count': expired_batches.count(),
+            'expired_quantity': total_expired_quantity,
+            'expired_value': float(total_expired_value),
+            'expiring_soon_count': expiring_soon.count(),
+            'expiring_soon_quantity': total_expiring_soon_quantity,
+            'expiring_soon_value': float(total_expiring_soon_value),
+            'expiring_this_week_count': expiring_this_week.count(),
+        })
+
 class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for Inventory read operations"""
     queryset = (Inventory.objects

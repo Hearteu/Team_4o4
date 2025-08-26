@@ -42,6 +42,31 @@ class ApiService {
     }
   }
 
+  // Generic HTTP method that can return any JSON type
+  static Future<dynamic> _getAny(String endpoint) async {
+    debugPrint('🌐 Making GET request to: $baseUrl$endpoint');
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: _headers,
+      );
+
+      debugPrint('📡 Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        debugPrint('✅ GET request successful');
+        return data;
+      } else {
+        debugPrint('❌ GET request failed: ${response.statusCode}');
+        throw Exception('Failed to load data: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Network error: $e');
+      throw Exception('Network error: $e');
+    }
+  }
+
   static Future<Map<String, dynamic>> _post(
     String endpoint,
     Map<String, dynamic> data,
@@ -372,7 +397,7 @@ class ApiService {
   }
 
   static Future<List<StockBatch>> getExpiredBatches() async {
-    final data = await _get('/stock-batches/expired/');
+    final data = await _getAny('/stock-batches/expired/');
     // Handle both paginated and non-paginated responses
     final List results = data is List
         ? data as List
@@ -381,7 +406,7 @@ class ApiService {
   }
 
   static Future<List<StockBatch>> getExpiringSoonBatches() async {
-    final data = await _get('/stock-batches/expiring_soon/');
+    final data = await _getAny('/stock-batches/expiring_soon/');
     // Handle both paginated and non-paginated responses
     final List results = data is List
         ? data as List
@@ -390,7 +415,7 @@ class ApiService {
   }
 
   static Future<List<StockBatch>> getExpiringThisWeekBatches() async {
-    final data = await _get('/stock-batches/expiring_this_week/');
+    final data = await _getAny('/stock-batches/expiring_this_week/');
     // Handle both paginated and non-paginated responses
     final List results = data is List
         ? data as List
