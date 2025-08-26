@@ -27,6 +27,12 @@ class Transaction {
     required this.createdAt,
   });
 
+  /// Calculate total amount based on quantity and unit price
+  double? get totalAmount {
+    if (unitPrice == null) return null;
+    return quantity * unitPrice!;
+  }
+
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
       id: json['id'],

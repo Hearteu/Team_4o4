@@ -103,6 +103,12 @@ class InventoryProvider with ChangeNotifier {
   Future<void> _loadTransactionsInternal() async {
     try {
       _transactions = await ApiService.getTransactions();
+      print('📋 InventoryProvider: Loaded ${_transactions.length} transactions');
+      
+      // Debug: Count by type
+      final stockIn = _transactions.where((t) => t.transactionType == TransactionType.IN).length;
+      final stockOut = _transactions.where((t) => t.transactionType == TransactionType.OUT).length;
+      print('  Stock IN: $stockIn, Stock OUT: $stockOut');
     } catch (e) {
       throw Exception('Failed to load transactions: $e');
     }

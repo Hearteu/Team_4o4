@@ -267,11 +267,19 @@ class ApiService {
   static Future<List<Transaction>> getTransactions() async {
     List<Transaction> allTransactions = [];
     String? nextUrl = '/transactions/';
+    int pageCount = 0;
 
     while (nextUrl != null) {
+      pageCount++;
+      print('🔍 Fetching transactions page $pageCount: $nextUrl');
+
       final data = await _get(nextUrl);
       final results = data['results'] as List;
       allTransactions.addAll(results.map((json) => Transaction.fromJson(json)));
+
+      print(
+        '📊 Page $pageCount: ${results.length} transactions, Total so far: ${allTransactions.length}',
+      );
 
       // Get next page URL
       nextUrl = data['next'];
@@ -283,9 +291,13 @@ class ApiService {
           path = path.substring(4); // Remove '/api/' prefix
         }
         nextUrl = path + (uri.query.isNotEmpty ? '?${uri.query}' : '');
+        print('🔄 Next URL: $nextUrl');
+      } else {
+        print('✅ No more pages');
       }
     }
 
+    print('🎯 Total transactions loaded: ${allTransactions.length}');
     return allTransactions;
   }
 
