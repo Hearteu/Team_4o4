@@ -30,16 +30,13 @@ class ProductSerializer(serializers.ModelSerializer):
     """Serializer for Product model"""
     category_name = serializers.CharField(source='category.name', read_only=True)
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
-    current_stock = serializers.SerializerMethodField()
-    total_value = serializers.SerializerMethodField()
-    is_low_stock = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = ['id', 'name', 'sku', 'description', 'category', 'category_name',
                  'supplier', 'supplier_name', 'unit_price', 'cost_price', 
                  'reorder_level', 'is_active', 'created_at', 'updated_at',
-                 'current_stock', 'total_value', 'is_low_stock']
+                 ]
 
     def get_current_stock(self, obj):
         try:

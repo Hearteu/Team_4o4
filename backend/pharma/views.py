@@ -88,13 +88,13 @@ class ProductViewSet(viewsets.ModelViewSet):
     """ViewSet for Product CRUD operations"""
     # Use select_related for OneToOne inventory and annotate current_stock for ordering/filtering
     queryset = (Product.objects
-        .select_related('category', 'supplier', 'inventory')
+        .select_related('category', 'supplier')
         .annotate(current_stock=F('inventory__quantity')))
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category', 'supplier', 'is_active']
     search_fields = ['name', 'sku', 'description']
-    ordering_fields = ['name', 'sku', 'unit_price', 'created_at', 'current_stock']
+    ordering_fields = ['name', 'sku', 'unit_price', 'created_at']
     ordering = ['name']
 
     def get_serializer_class(self):
