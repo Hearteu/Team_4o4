@@ -129,7 +129,27 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
     final response = aiResponse.toLowerCase();
     final userQuery = userMessage.toLowerCase();
 
-    // Check for specific product queries first
+    // Check for ranking queries first (top N, best N, etc.)
+    if (userQuery.contains('top') ||
+        response.contains('top') ||
+        userQuery.contains('best') ||
+        response.contains('best') ||
+        userQuery.contains('highest') ||
+        response.contains('highest') ||
+        userQuery.contains('most') ||
+        response.contains('most') ||
+        userQuery.contains('popular') ||
+        response.contains('popular') ||
+        userQuery.contains('leading') ||
+        response.contains('leading')) {
+      return {
+        'type': 'ranking',
+        'title': 'View Top Products',
+        'description': 'Ranked products by quantity, value, or price',
+      };
+    }
+
+    // Check for specific product queries
     if (userQuery.contains('dental floss') ||
         response.contains('dental floss') ||
         userQuery.contains('toothpaste') ||
@@ -258,15 +278,223 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
 
   // Navigate to appropriate screen based on data context
   void _navigateToDataScreen(Map<String, dynamic> dataContext) {
+    // Get the last user message for precise filtering
+    String userQuery = '';
+    String aiResponse = '';
+    if (_messages.isNotEmpty) {
+      // Find the last user message and AI response
+      for (int i = _messages.length - 1; i >= 0; i--) {
+        if (_messages[i].isUser && userQuery.isEmpty) {
+          userQuery = _messages[i].text;
+        } else if (!_messages[i].isUser && aiResponse.isEmpty) {
+          aiResponse = _messages[i].text;
+        }
+        if (userQuery.isNotEmpty && aiResponse.isNotEmpty) break;
+      }
+    }
+
+    // Extract mentioned products from AI response
+    List<String> mentionedProducts = _extractMentionedProducts(
+      aiResponse,
+      userQuery,
+    );
+
+    // Add mentioned products to data context
+    Map<String, dynamic> enhancedContext = Map<String, dynamic>.from(
+      dataContext,
+    );
+    enhancedContext['mentioned_products'] = mentionedProducts;
+    enhancedContext['ai_response'] = aiResponse;
+
     // Pass the context data to show filtered results
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => DynamicDataScreen(
-          dataContext: dataContext,
-          userQuery: _messageController.text.trim(),
+          dataContext: enhancedContext,
+          userQuery: userQuery,
         ),
       ),
     );
+  }
+
+  // Extract products mentioned in AI response
+  List<String> _extractMentionedProducts(String aiResponse, String userQuery) {
+    List<String> mentionedProducts = [];
+
+    // Extract from AI response
+    if (aiResponse.isNotEmpty) {
+      // Look for product names in the AI response
+      List<String> allProducts = [
+        'Dental Floss',
+        'Toothpaste Fluoride',
+        'Antiseptic Solution',
+        'Metoprolol 50mg',
+        'Men\'s Multivitamin',
+        'Prenatal Vitamins',
+        'Iron Supplement',
+        'Lisinopril 10mg',
+        'Amlodipine 5mg',
+        'Glipizide 5mg',
+        'Prostate Health',
+        'Sunscreen SPF 50',
+        'Eye Drops Lubricating',
+        'Baby Diapers Size 3',
+        'Acne Treatment Gel',
+        'Reading Glasses +2.0',
+        'Azithromycin 250mg',
+        'Fluticasone Nasal Spray',
+        'Baby Wipes',
+        'Testosterone Support',
+      ];
+
+      for (String product in allProducts) {
+        if (aiResponse.toLowerCase().contains(product.toLowerCase())) {
+          mentionedProducts.add(product);
+        }
+      }
+    }
+
+    // Also extract from user query
+    if (userQuery.isNotEmpty) {
+      List<String> queryTerms = _extractSearchTerms(userQuery);
+      mentionedProducts.addAll(queryTerms);
+    }
+
+    // Remove duplicates and return
+    return mentionedProducts.toSet().toList();
+  }
+
+  // Extract search terms from query (reuse existing method)
+  List<String> _extractSearchTerms(String query) {
+    // Common pharmacy product keywords
+    List<String> pharmacyKeywords = [
+      'dental',
+      'floss',
+      'toothpaste',
+      'tooth',
+      'brush',
+      'vitamin',
+      'supplement',
+      'medicine',
+      'drug',
+      'pill',
+      'tablet',
+      'capsule',
+      'syrup',
+      'cream',
+      'gel',
+      'ointment',
+      'drops',
+      'spray',
+      'inhaler',
+      'bandage',
+      'gauze',
+      'cotton',
+      'alcohol',
+      'antiseptic',
+      'antibiotic',
+      'pain',
+      'fever',
+      'cold',
+      'flu',
+      'allergy',
+      'diabetes',
+      'blood',
+      'pressure',
+      'heart',
+      'cholesterol',
+      'baby',
+      'diaper',
+      'wipe',
+      'formula',
+      'milk',
+      'adult',
+      'senior',
+      'men',
+      'women',
+      'prenatal',
+      'iron',
+      'calcium',
+      'magnesium',
+      'zinc',
+      'omega',
+      'fish',
+      'oil',
+      'probiotic',
+      'enzyme',
+      'hormone',
+      'testosterone',
+      'prostate',
+      'eye',
+      'ear',
+      'nose',
+      'throat',
+      'skin',
+      'hair',
+      'nail',
+      'sunscreen',
+      'lotion',
+      'soap',
+      'shampoo',
+      'conditioner',
+      'deodorant',
+      'perfume',
+      'cosmetic',
+      'makeup',
+      'razor',
+      'blade',
+      'shave',
+      'trim',
+      'reading',
+      'glasses',
+      'contact',
+      'lens',
+      'hearing',
+      'aid',
+      'cane',
+      'walker',
+      'wheelchair',
+      'crutch',
+      'brace',
+      'splint',
+      'cast',
+      'tape',
+      'adhesive',
+      'band',
+      'plaster',
+      'thermometer',
+      'scale',
+      'monitor',
+      'device',
+      'equipment',
+      'tool',
+      'instrument',
+      'machine',
+      'apparatus',
+    ];
+
+    // Split query into words and filter meaningful terms
+    List<String> words = query
+        .split(' ')
+        .where((word) => word.length > 2) // Filter out short words
+        .map((word) => word.toLowerCase())
+        .toList();
+
+    // Add pharmacy-specific keywords that match the query
+    List<String> searchTerms = [];
+
+    // Add individual words from query
+    searchTerms.addAll(words);
+
+    // Add pharmacy keywords that are mentioned in the query
+    for (String keyword in pharmacyKeywords) {
+      if (query.contains(keyword)) {
+        searchTerms.add(keyword);
+      }
+    }
+
+    // Remove duplicates and return
+    return searchTerms.toSet().toList();
   }
 
   @override
