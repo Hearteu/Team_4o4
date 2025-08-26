@@ -44,7 +44,7 @@ class ExportService {
 
     _downloadCSV(
       csvData,
-      'medease_products_${DateTime.now().millisecondsSinceEpoch}.csv',
+      'medeasy_products_${DateTime.now().millisecondsSinceEpoch}.csv',
     );
   }
 
@@ -77,7 +77,7 @@ class ExportService {
 
     _downloadCSV(
       csvData,
-      'medease_inventory_${DateTime.now().millisecondsSinceEpoch}.csv',
+      'medeasy_inventory_${DateTime.now().millisecondsSinceEpoch}.csv',
     );
   }
 
@@ -114,7 +114,7 @@ class ExportService {
 
     _downloadCSV(
       csvData,
-      'medease_transactions_${DateTime.now().millisecondsSinceEpoch}.csv',
+      'medeasy_transactions_${DateTime.now().millisecondsSinceEpoch}.csv',
     );
   }
 
@@ -135,7 +135,7 @@ class ExportService {
 
     _downloadCSV(
       csvData,
-      'medease_categories_${DateTime.now().millisecondsSinceEpoch}.csv',
+      'medeasy_categories_${DateTime.now().millisecondsSinceEpoch}.csv',
     );
   }
 
@@ -168,7 +168,7 @@ class ExportService {
 
     _downloadCSV(
       csvData,
-      'medease_suppliers_${DateTime.now().millisecondsSinceEpoch}.csv',
+      'medeasy_suppliers_${DateTime.now().millisecondsSinceEpoch}.csv',
     );
   }
 
@@ -221,7 +221,7 @@ class ExportService {
 
     _downloadCSV(
       csvData,
-      'medease_low_stock_report_${DateTime.now().millisecondsSinceEpoch}.csv',
+      'medeasy_low_stock_report_${DateTime.now().millisecondsSinceEpoch}.csv',
     );
   }
 
@@ -257,7 +257,7 @@ class ExportService {
 
     _downloadCSV(
       csvData,
-      'medease_sales_report_${DateTime.now().millisecondsSinceEpoch}.csv',
+      'medeasy_sales_report_${DateTime.now().millisecondsSinceEpoch}.csv',
     );
   }
 
@@ -292,7 +292,7 @@ class ExportService {
 
     _downloadCSV(
       csvData,
-      'medease_purchase_report_${DateTime.now().millisecondsSinceEpoch}.csv',
+      'medeasy_purchase_report_${DateTime.now().millisecondsSinceEpoch}.csv',
     );
   }
 
@@ -332,7 +332,7 @@ class ExportService {
     final anchor = html.AnchorElement(href: url)
       ..setAttribute(
         'download',
-        'medease_data_${DateTime.now().millisecondsSinceEpoch}.json',
+        'medeasy_data_${DateTime.now().millisecondsSinceEpoch}.json',
       )
       ..click();
     html.Url.revokeObjectUrl(url);

@@ -589,22 +589,22 @@ class _ExportImportScreenState extends State<ExportImportScreen> {
   // Template download methods
   void _downloadProductTemplate() {
     final template = ImportService.getProductCSVTemplate();
-    _downloadCSV(template, 'medease_product_template.csv');
+    _downloadCSV(template, 'medeasy_product_template.csv');
   }
 
   void _downloadCategoryTemplate() {
     final template = ImportService.getCategoryCSVTemplate();
-    _downloadCSV(template, 'medease_category_template.csv');
+    _downloadCSV(template, 'medeasy_category_template.csv');
   }
 
   void _downloadSupplierTemplate() {
     final template = ImportService.getSupplierCSVTemplate();
-    _downloadCSV(template, 'medease_supplier_template.csv');
+    _downloadCSV(template, 'medeasy_supplier_template.csv');
   }
 
   void _downloadTransactionTemplate() {
     final template = ImportService.getTransactionCSVTemplate();
-    _downloadCSV(template, 'medease_transaction_template.csv');
+    _downloadCSV(template, 'medeasy_transaction_template.csv');
   }
 
   void _downloadCSV(List<List<String>> csvData, String filename) {

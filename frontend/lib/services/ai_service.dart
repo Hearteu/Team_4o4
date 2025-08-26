@@ -104,7 +104,25 @@ User Question: $userMessage
 Current Pharmacy Database Context:
 ${json.encode(dbContext)}
 
-Instructions: You have access to the complete pharmacy inventory data including all products, quantities, prices, and categories. When asked about specific products (like "dental floss"), search through the inventory_items array to find matching products. Provide specific details about quantities, prices, stock status, and categories. If a product is not found, clearly state that it's not in the current inventory.
+           Instructions: You have access to the complete pharmacy inventory data including all products, quantities, prices, categories, and stock batches. When asked about specific products (like "dental floss"), search through the inventory_items array to find matching products. You can also access stock_batches data to provide detailed information about lot numbers, expiry dates, suppliers, and batch-specific quantities. 
+
+           IMPORTANT: For casual greetings (hi, hello, hey, etc.), respond with a simple, friendly greeting and offer general pharmacy assistance. Do NOT provide unsolicited analytics or data analysis for casual conversations. Only provide detailed analytics when specifically asked for them. 
+
+           IMPORTANT TRANSACTION DATA INTERPRETATION:
+           - "OUT" transactions with negative quantities are SALES (products sold to customers)
+           - "IN" transactions with positive quantities are PURCHASES (products received from suppliers)
+           - For best-selling products, analyze "OUT" transactions and use the "absolute_quantity" field
+           - For sales analysis, use "absolute_quantity" which shows positive sales numbers
+           - Recent transactions show actual sales activity for determining best-sellers
+           - Use "total_amount" for revenue analysis (ignore negative sign for sales)
+           
+           TOP SELLING PRODUCTS DATA:
+           - Use "top_selling_products" array for ranking best-selling products
+           - This data is pre-calculated and sorted by total sold quantity (highest first)
+           - Each item contains: product_name, product_sku, total_sold_quantity, total_sold_value, transaction_count
+           - For "top 5 best-selling products", use the first 5 items from this array
+
+           Provide specific details about quantities, prices, stock status, categories, and batch information when relevant. If a product is not found, clearly state that it's not in the current inventory.
 
 FORMATTING GUIDELINES:
 1. Always display all monetary values using Philippine Peso (P) currency symbol. Never use \$ (US Dollar) symbol.
@@ -135,6 +153,15 @@ Examples:
   - Quantity: 179
   - Stock Status: Low
   - Total Value: P714.21
+  - Stock Batches: 3 batches with lot numbers and expiry dates
+
+• Product with Stock Batches:
+  - Product: Ciprofloxacin 500 mg Tablet
+  - Lot Number: CIPRO500-250419-679
+  - Expiry Date: 2026-04-19
+  - Quantity: 50 units
+  - Supplier: PharmaCorp
+  - Days to Expiry: 365 days
 
 • Top 5 Products by Value:
   1. Product A
@@ -145,6 +172,20 @@ Examples:
      - Price: P987.65
      - Quantity: 15
      - Total Value: P14,814.75
+
+• Stock Batch Information:
+  - When asked about specific products, you can provide batch details including lot numbers, expiry dates, suppliers, and quantities
+  - Use stock_batches data to show detailed inventory tracking information
+  - Include expiry warnings for products expiring soon
+
+  
+• Ranking Guidelines:
+  - For "best selling", rank by TOTAL sold quantity (sum of all OUT transactions)
+  - #1 should be the product with the HIGHEST total sold quantity
+  - If there are multiple products with the same total sold quantity, rank by total sold value (highest first)
+  - Calculate total sold quantity by summing absolute_quantity from all OUT transactions for each product
+  - Sort in descending order (highest to lowest)
+  - Use format: "1. Product Name - Total Sold: X units - Revenue: PXXX.XX"
 ''';
       }
 

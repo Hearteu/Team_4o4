@@ -147,7 +147,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('MedEase Products'),
+        title: const Text('MedEasy Products'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -224,7 +224,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _selectedCategory,
+                            initialValue: _selectedCategory,
                             decoration: const InputDecoration(
                               labelText: 'Category',
                               border: OutlineInputBorder(),
@@ -251,7 +251,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _selectedStatus,
+                            initialValue: _selectedStatus,
                             decoration: const InputDecoration(
                               labelText: 'Status',
                               border: OutlineInputBorder(),

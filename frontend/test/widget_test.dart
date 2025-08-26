@@ -13,7 +13,7 @@ import 'package:frontend/main.dart';
 void main() {
   testWidgets('Inventory app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MedEaseApp());
+    await tester.pumpWidget(const MedEasyApp());
 
     // Verify that our app starts without crashing
     expect(find.byType(MaterialApp), findsOneWidget);

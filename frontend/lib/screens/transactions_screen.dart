@@ -118,7 +118,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('MedEase Transactions'),
+        title: const Text('MedEasy Transactions'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -259,7 +259,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedTransactionType,
+                  initialValue: _selectedTransactionType,
                   decoration: InputDecoration(
                     labelText: 'Transaction Type',
                     border: OutlineInputBorder(
@@ -287,7 +287,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedTimeFilter,
+                  initialValue: _selectedTimeFilter,
                   decoration: InputDecoration(
                     labelText: 'Time Period',
                     border: OutlineInputBorder(

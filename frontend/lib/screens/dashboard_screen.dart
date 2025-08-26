@@ -35,10 +35,8 @@ class DashboardScreen extends StatelessWidget {
                   elevation: 0,
                   flexibleSpace: FlexibleSpaceBar(
                     title: Text(
-                      'MedEase Dashboard',
-                      style: AppTheme.heading3.copyWith(
-                        color: AppTheme.textPrimary,
-                      ),
+                      'MedEasy Dashboard',
+                      style: AppTheme.heading3.copyWith(color: Colors.white),
                     ),
                     background: Container(
                       decoration: AppTheme.gradientDecoration,

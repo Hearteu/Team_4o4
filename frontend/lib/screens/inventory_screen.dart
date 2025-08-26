@@ -120,7 +120,7 @@ class _InventoryScreenState extends State<InventoryScreen>
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('MedEase Inventory'),
+        title: const Text('MedEasy Inventory'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_shopping_cart),
