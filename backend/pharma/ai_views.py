@@ -75,6 +75,22 @@ def get_database_context(request):
                 'product_count': products_in_category
             })
         
+        # Get full inventory data for AI to access specific products
+        inventory_data = []
+        inventory_items = Inventory.objects.select_related('product', 'product__category').all()
+        for item in inventory_items:
+            inventory_data.append({
+                'product_name': item.product.name,
+                'product_sku': item.product.sku,
+                'category': item.product.category.name if item.product.category else 'Uncategorized',
+                'quantity': item.quantity,
+                'unit_price': float(item.product.unit_price),
+                'total_value': float(item.total_value),
+                'is_low_stock': item.is_low_stock,
+                'reorder_level': item.product.reorder_level,
+                'last_updated': item.last_updated.isoformat()
+            })
+        
         # Compile all data
         context_data = {
             'summary': {
@@ -86,6 +102,7 @@ def get_database_context(request):
                 'low_stock_count': inventory_summary['low_stock_count'] or 0,
                 'out_of_stock_count': inventory_summary['out_of_stock_count'] or 0
             },
+            'inventory_items': inventory_data,  # Full inventory data for AI access
             'low_stock_items': low_stock_data,
             'recent_transactions': transactions_data,
             'categories': categories_data,

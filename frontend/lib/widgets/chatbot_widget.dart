@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../services/ai_service.dart';
+import '../screens/dashboard_screen.dart';
+import '../screens/inventory_screen.dart';
+import '../screens/products_screen.dart';
+import '../screens/transactions_screen.dart';
+import '../screens/dynamic_data_screen.dart'; // Added import for DynamicDataScreen
 
 class ChatbotWidget extends StatefulWidget {
   const ChatbotWidget({super.key});
@@ -88,10 +93,17 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
   void _simulateAIResponse(String userMessage) async {
     try {
       final response = await AIService.generateAIResponse(userMessage);
+      final dataContext = _detectDataContext(response, userMessage);
+
       setState(() {
         _isTyping = false;
         _messages.add(
-          ChatMessage(text: response, isUser: false, timestamp: DateTime.now()),
+          ChatMessage(
+            text: response,
+            isUser: false,
+            timestamp: DateTime.now(),
+            dataContext: dataContext,
+          ),
         );
       });
     } catch (e) {
@@ -107,6 +119,154 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
         );
       });
     }
+  }
+
+  // Detect what type of data is referenced in the AI response
+  Map<String, dynamic>? _detectDataContext(
+    String aiResponse,
+    String userMessage,
+  ) {
+    final response = aiResponse.toLowerCase();
+    final userQuery = userMessage.toLowerCase();
+
+    // Check for specific product queries first
+    if (userQuery.contains('dental floss') ||
+        response.contains('dental floss') ||
+        userQuery.contains('toothpaste') ||
+        response.contains('toothpaste') ||
+        userQuery.contains('vitamin') ||
+        response.contains('vitamin') ||
+        userQuery.contains('medicine') ||
+        response.contains('medicine') ||
+        userQuery.contains('drug') ||
+        response.contains('drug') ||
+        userQuery.contains('supplement') ||
+        response.contains('supplement')) {
+      return {
+        'type': 'inventory',
+        'title': 'View Product Details',
+        'description': 'Specific product information and stock levels',
+      };
+    }
+
+    // Check for inventory-related queries
+    if (response.contains('inventory') ||
+        response.contains('stock') ||
+        response.contains('quantity') ||
+        response.contains('items') ||
+        userQuery.contains('inventory') ||
+        userQuery.contains('stock') ||
+        userQuery.contains('quantity') ||
+        userQuery.contains('items')) {
+      return {
+        'type': 'inventory',
+        'title': 'View Inventory Data',
+        'description': 'Current stock levels and inventory status',
+      };
+    }
+
+    // Check for product-related queries
+    if (response.contains('product') ||
+        response.contains('products') ||
+        response.contains('catalog') ||
+        response.contains('items') ||
+        userQuery.contains('product') ||
+        userQuery.contains('products') ||
+        userQuery.contains('catalog')) {
+      return {
+        'type': 'products',
+        'title': 'View Product Catalog',
+        'description': 'Complete product information and details',
+      };
+    }
+
+    // Check for transaction-related queries
+    if (response.contains('transaction') ||
+        response.contains('transactions') ||
+        response.contains('sales') ||
+        response.contains('purchase') ||
+        response.contains('recent') ||
+        response.contains('history') ||
+        userQuery.contains('transaction') ||
+        userQuery.contains('transactions') ||
+        userQuery.contains('sales') ||
+        userQuery.contains('purchase') ||
+        userQuery.contains('recent') ||
+        userQuery.contains('history')) {
+      return {
+        'type': 'transactions',
+        'title': 'View Transaction History',
+        'description': 'Recent sales and purchase transactions',
+      };
+    }
+
+    // Check for financial/summary queries
+    if (response.contains('total') ||
+        response.contains('value') ||
+        response.contains('worth') ||
+        response.contains('summary') ||
+        response.contains('overview') ||
+        response.contains('dashboard') ||
+        userQuery.contains('total') ||
+        userQuery.contains('value') ||
+        userQuery.contains('worth') ||
+        userQuery.contains('summary') ||
+        userQuery.contains('overview') ||
+        userQuery.contains('dashboard')) {
+      return {
+        'type': 'dashboard',
+        'title': 'View Dashboard Summary',
+        'description': 'Complete overview of pharmacy data',
+      };
+    }
+
+    // Check for low stock alerts
+    if (response.contains('low stock') ||
+        response.contains('reorder') ||
+        response.contains('out of stock') ||
+        response.contains('alert') ||
+        userQuery.contains('low stock') ||
+        userQuery.contains('reorder') ||
+        userQuery.contains('out of stock') ||
+        userQuery.contains('alert')) {
+      return {
+        'type': 'low_stock',
+        'title': 'View Low Stock Alerts',
+        'description': 'Products that need reordering',
+      };
+    }
+
+    // Check for category-related queries
+    if (response.contains('category') ||
+        response.contains('categories') ||
+        response.contains('type') ||
+        response.contains('group') ||
+        userQuery.contains('category') ||
+        userQuery.contains('categories') ||
+        userQuery.contains('type') ||
+        userQuery.contains('group')) {
+      return {
+        'type': 'categories',
+        'title': 'View Categories',
+        'description': 'Product categories and distribution',
+      };
+    }
+
+    // No specific data context detected
+    return null;
+  }
+
+  // Navigate to appropriate screen based on data context
+  void _navigateToDataScreen(Map<String, dynamic> dataContext) {
+    // Pass the context data to show filtered results
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DynamicDataScreen(
+          dataContext: dataContext,
+          userQuery: _messageController.text.trim(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -346,12 +506,39 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
                     : Colors.grey[100],
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: Text(
-                message.text,
-                style: GoogleFonts.poppins(
-                  color: message.isUser ? Colors.white : Colors.black87,
-                  fontSize: 14,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    message.text,
+                    style: GoogleFonts.poppins(
+                      color: message.isUser ? Colors.white : Colors.black87,
+                      fontSize: 14,
+                    ),
+                  ),
+                  if (!message.isUser) ...[
+                    const SizedBox(height: 8),
+                    if (message.dataContext != null) ...[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: () =>
+                              _navigateToDataScreen(message.dataContext!),
+                          child: Text(message.dataContext!['title']),
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            foregroundColor: AppTheme.primaryColor,
+                            textStyle: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ],
               ),
             ),
           ),
@@ -433,10 +620,12 @@ class ChatMessage {
   final String text;
   final bool isUser;
   final DateTime timestamp;
+  final Map<String, dynamic>? dataContext;
 
   ChatMessage({
     required this.text,
     required this.isUser,
     required this.timestamp,
+    this.dataContext,
   });
 }

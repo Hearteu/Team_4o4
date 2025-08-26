@@ -104,7 +104,7 @@ User Question: $userMessage
 Current Pharmacy Database Context:
 ${json.encode(dbContext)}
 
-Please provide a response based on the user's question and the current pharmacy data above. Focus on giving specific, actionable insights based on the real data provided.
+Instructions: You have access to the complete pharmacy inventory data including all products, quantities, prices, and categories. When asked about specific products (like "dental floss"), search through the inventory_items array to find matching products. Provide specific details about quantities, prices, stock status, and categories. If a product is not found, clearly state that it's not in the current inventory.
 ''';
       }
 
