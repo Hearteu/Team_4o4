@@ -5,6 +5,7 @@ import '../models/product.dart';
 import '../models/inventory.dart';
 import '../models/transaction.dart';
 import '../services/api_service.dart';
+import '../services/dummy_data_service.dart';
 
 class InventoryProvider with ChangeNotifier {
   // Data lists
@@ -71,7 +72,8 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadCategories() async {
     try {
       _setLoading(true);
-      _categories = await ApiService.getCategories();
+      // Use dummy data instead of API call
+      _categories = DummyDataService.getDummyCategories();
       _setError(null);
     } catch (e) {
       _setError(e.toString());
@@ -84,7 +86,8 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadSuppliers() async {
     try {
       _setLoading(true);
-      _suppliers = await ApiService.getSuppliers();
+      // Use dummy data instead of API call
+      _suppliers = DummyDataService.getDummySuppliers();
       _setError(null);
     } catch (e) {
       _setError(e.toString());
@@ -97,7 +100,8 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadProducts() async {
     try {
       _setLoading(true);
-      _products = await ApiService.getProducts();
+      // Use dummy data instead of API call
+      _products = DummyDataService.getDummyProducts();
       _setError(null);
     } catch (e) {
       _setError(e.toString());
@@ -110,7 +114,8 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadInventory() async {
     try {
       _setLoading(true);
-      _inventory = await ApiService.getInventory();
+      // Use dummy data instead of API call
+      _inventory = DummyDataService.getDummyInventory();
       _setError(null);
     } catch (e) {
       _setError(e.toString());
@@ -123,7 +128,8 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadTransactions() async {
     try {
       _setLoading(true);
-      _transactions = await ApiService.getTransactions();
+      // Use dummy data instead of API call
+      _transactions = DummyDataService.getDummyTransactions();
       _setError(null);
     } catch (e) {
       _setError(e.toString());
@@ -150,15 +156,18 @@ class InventoryProvider with ChangeNotifier {
   }
 
   Future<void> _loadProductStats() async {
-    _productStats = await ApiService.getProductStats();
+    // Use dummy data instead of API call
+    _productStats = DummyDataService.getDummyStats();
   }
 
   Future<void> _loadInventorySummary() async {
-    _inventorySummary = await ApiService.getInventorySummary();
+    // Use dummy data instead of API call
+    _inventorySummary = DummyDataService.getDummyInventorySummary();
   }
 
   Future<void> _loadTransactionSummary() async {
-    _transactionSummary = await ApiService.getTransactionSummary();
+    // Use dummy data instead of API call
+    _transactionSummary = DummyDataService.getDummyTransactionSummary();
   }
 
   // Create category
