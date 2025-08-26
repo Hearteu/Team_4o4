@@ -65,11 +65,16 @@ class InventorySerializer(serializers.ModelSerializer):
     product_sku = serializers.CharField(source='product.sku', read_only=True)
     unit_price = serializers.DecimalField(source='product.unit_price', max_digits=10, decimal_places=2, read_only=True)
     total_value  = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True, source='total_value_db')
+    is_low_stock = serializers.SerializerMethodField()
     
     class Meta:
         model = Inventory
         fields = ['id', 'product', 'product_name', 'product_sku', 'quantity', 
                  'unit_price', 'total_value', 'is_low_stock', 'last_updated']
+    
+    def get_is_low_stock(self, obj):
+        """Calculate if stock is low based on reorder level"""
+        return obj.quantity <= obj.product.reorder_level
 
 class TransactionSerializer(serializers.ModelSerializer):
     """Serializer for Transaction model"""

@@ -210,15 +210,53 @@ class ApiService {
 
   // Inventory endpoints
   static Future<List<Inventory>> getInventory() async {
-    final data = await _get('/inventory/');
-    final results = data['results'] as List;
-    return results.map((json) => Inventory.fromJson(json)).toList();
+    List<Inventory> allInventory = [];
+    String? nextUrl = '/inventory/';
+
+    while (nextUrl != null) {
+      final data = await _get(nextUrl);
+      final results = data['results'] as List;
+      allInventory.addAll(results.map((json) => Inventory.fromJson(json)));
+
+      // Get next page URL
+      nextUrl = data['next'];
+      if (nextUrl != null) {
+        // Extract just the path from the full URL, removing /api/ prefix
+        final uri = Uri.parse(nextUrl);
+        String path = uri.path;
+        if (path.startsWith('/api/')) {
+          path = path.substring(4); // Remove '/api/' prefix
+        }
+        nextUrl = path + (uri.query.isNotEmpty ? '?${uri.query}' : '');
+      }
+    }
+
+    return allInventory;
   }
 
   static Future<List<Inventory>> getLowStockInventory() async {
-    final data = await _get('/inventory/low_stock/');
-    final results = data['results'] as List;
-    return results.map((json) => Inventory.fromJson(json)).toList();
+    List<Inventory> allInventory = [];
+    String? nextUrl = '/inventory/low_stock/';
+
+    while (nextUrl != null) {
+      final data = await _get(nextUrl);
+      final results = data['results'] as List;
+      allInventory.addAll(results.map((json) => Inventory.fromJson(json)));
+
+      // Get next page URL
+      nextUrl = data['next'];
+      if (nextUrl != null) {
+        // Extract just the path from the full URL, removing /api/ prefix
+        final uri = Uri.parse(nextUrl);
+        String path = uri.path;
+        if (path.startsWith('/api/')) {
+          path = path.substring(4); // Remove '/api/' prefix
+        }
+        nextUrl = path + (uri.query.isNotEmpty ? '?${uri.query}' : '');
+      }
+    }
+
+    return allInventory;
   }
 
   static Future<Map<String, dynamic>> getInventorySummary() async {
@@ -227,9 +265,28 @@ class ApiService {
 
   // Transaction endpoints
   static Future<List<Transaction>> getTransactions() async {
-    final data = await _get('/transactions/');
-    final results = data['results'] as List;
-    return results.map((json) => Transaction.fromJson(json)).toList();
+    List<Transaction> allTransactions = [];
+    String? nextUrl = '/transactions/';
+
+    while (nextUrl != null) {
+      final data = await _get(nextUrl);
+      final results = data['results'] as List;
+      allTransactions.addAll(results.map((json) => Transaction.fromJson(json)));
+
+      // Get next page URL
+      nextUrl = data['next'];
+      if (nextUrl != null) {
+        // Extract just the path from the full URL, removing /api/ prefix
+        final uri = Uri.parse(nextUrl);
+        String path = uri.path;
+        if (path.startsWith('/api/')) {
+          path = path.substring(4); // Remove '/api/' prefix
+        }
+        nextUrl = path + (uri.query.isNotEmpty ? '?${uri.query}' : '');
+      }
+    }
+
+    return allTransactions;
   }
 
   static Future<Transaction> createTransaction(
