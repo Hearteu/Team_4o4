@@ -72,8 +72,7 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadCategories() async {
     try {
       _setLoading(true);
-      // Use dummy data instead of API call
-      _categories = DummyDataService.getDummyCategories();
+      _categories = await ApiService.getCategories();
       _setError(null);
     } catch (e) {
       _setError(e.toString());
@@ -86,8 +85,7 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadSuppliers() async {
     try {
       _setLoading(true);
-      // Use dummy data instead of API call
-      _suppliers = DummyDataService.getDummySuppliers();
+      _suppliers = await ApiService.getSuppliers();
       _setError(null);
     } catch (e) {
       _setError(e.toString());
@@ -100,8 +98,7 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadProducts() async {
     try {
       _setLoading(true);
-      // Use dummy data instead of API call
-      _products = DummyDataService.getDummyProducts();
+      _products = await ApiService.getProducts();
       _setError(null);
     } catch (e) {
       _setError(e.toString());
@@ -114,8 +111,7 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadInventory() async {
     try {
       _setLoading(true);
-      // Use dummy data instead of API call
-      _inventory = DummyDataService.getDummyInventory();
+      _inventory = await ApiService.getInventory();
       _setError(null);
     } catch (e) {
       _setError(e.toString());
@@ -128,8 +124,7 @@ class InventoryProvider with ChangeNotifier {
   Future<void> loadTransactions() async {
     try {
       _setLoading(true);
-      // Use dummy data instead of API call
-      _transactions = DummyDataService.getDummyTransactions();
+      _transactions = await ApiService.getTransactions();
       _setError(null);
     } catch (e) {
       _setError(e.toString());

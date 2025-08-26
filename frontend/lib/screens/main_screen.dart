@@ -7,6 +7,7 @@ import 'products_screen.dart';
 import 'inventory_screen.dart';
 import 'transactions_screen.dart';
 import 'settings_screen.dart';
+import '../widgets/chatbot_widget.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -38,7 +39,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: Stack(children: [_screens[_currentIndex], const ChatbotWidget()]),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [

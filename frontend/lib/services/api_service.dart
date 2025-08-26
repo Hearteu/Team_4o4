@@ -8,7 +8,7 @@ import '../models/inventory.dart';
 import '../models/transaction.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8000/api';
+  static const String baseUrl = 'http://localhost:8000/api'; // Web localhost
 
   // Headers for API requests
   static Map<String, String> get _headers => {
@@ -17,16 +17,16 @@ class ApiService {
   };
 
   // Generic HTTP methods
-    static Future<Map<String, dynamic>> _get(String endpoint) async {
+  static Future<Map<String, dynamic>> _get(String endpoint) async {
     debugPrint('🌐 Making GET request to: $baseUrl$endpoint');
     try {
       final response = await http.get(
         Uri.parse('$baseUrl$endpoint'),
         headers: _headers,
       );
-      
+
       debugPrint('📡 Response status: ${response.statusCode}');
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         debugPrint('✅ GET request successful');
