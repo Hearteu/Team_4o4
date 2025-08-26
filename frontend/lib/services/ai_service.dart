@@ -3,171 +3,160 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class AIService {
-  static const String baseUrl = 'http://localhost:8000/api/ai'; // Web localhost
+  // Rev21 Labs AI API Configuration
+  static const String _rev21BaseUrl = 'https://ai-tools.rev21labs.com/api/v1';
+  static const String _apiKey =
+      'MTc0NTI4NTItYzNkYS00NmQ0LWI0MTktMDc2MmVhYjc2OWE3';
 
-  // Headers for API requests
-  static const Map<String, String> _headers = {
+  // Backend API for database context
+  static const String _backendBaseUrl = 'http://localhost:8000/api';
+
+  // Session management
+  static String? _sessionId;
+
+  // Headers for Rev21 Labs API requests
+  static Map<String, String> get _rev21Headers => {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'x-api-key': _apiKey,
+  };
+
+  // Headers for backend API requests
+  static Map<String, String> get _backendHeaders => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
 
-  // Note: All AI functionality is now handled through the chat endpoint
-  // Use generateAIResponse() for all AI interactions
+  // Initialize chat session with Rev21 Labs
+  static Future<String> _initializeSession() async {
+    if (_sessionId != null) return _sessionId!;
 
-  // Get comprehensive insights
-  static Future<Map<String, dynamic>> getComprehensiveInsights() async {
     try {
-      debugPrint('🤖 AI Service: Getting comprehensive insights...');
-      final response = await http.get(
-        Uri.parse('$baseUrl/comprehensive-insights/'),
-        headers: _headers,
-      );
+      debugPrint('🤖 AI Service: Initializing Rev21 Labs chat session...');
+      final response = await http
+          .get(Uri.parse('$_rev21BaseUrl/ai/session'), headers: _rev21Headers)
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        debugPrint('✅ AI Service: Comprehensive insights received');
-        return data['data'];
+        _sessionId = data['session_id'];
+        debugPrint(
+          '✅ AI Service: Rev21 Labs session initialized - $_sessionId',
+        );
+        return _sessionId!;
       } else {
         debugPrint(
-          '❌ AI Service: Failed to get comprehensive insights - ${response.statusCode}',
+          '❌ AI Service: Failed to initialize Rev21 Labs session - ${response.statusCode}',
         );
-        throw Exception('Failed to get comprehensive insights');
+        throw Exception('Failed to initialize Rev21 Labs session');
       }
     } catch (e) {
-      debugPrint('❌ AI Service: Error getting comprehensive insights - $e');
+      debugPrint('❌ AI Service: Error initializing Rev21 Labs session - $e');
       throw Exception('Network error: $e');
     }
   }
 
-  // Get alert summary
-  static Future<Map<String, dynamic>> getAlertSummary() async {
+  // Get database context from backend
+  static Future<Map<String, dynamic>> _getDatabaseContext() async {
     try {
-      debugPrint('🤖 AI Service: Getting alert summary...');
-      final response = await http.get(
-        Uri.parse('$baseUrl/alert-summary/'),
-        headers: _headers,
-      );
+      debugPrint('🤖 AI Service: Getting database context from backend...');
+      final response = await http
+          .get(
+            Uri.parse('$_backendBaseUrl/ai/database-context/'),
+            headers: _backendHeaders,
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        debugPrint('✅ AI Service: Alert summary received');
+        debugPrint('✅ AI Service: Database context received');
         return data['data'];
       } else {
         debugPrint(
-          '❌ AI Service: Failed to get alert summary - ${response.statusCode}',
+          '❌ AI Service: Failed to get database context - ${response.statusCode}',
         );
-        throw Exception('Failed to get alert summary');
+        return {}; // Return empty context if backend is unavailable
       }
     } catch (e) {
-      debugPrint('❌ AI Service: Error getting alert summary - $e');
-      throw Exception('Network error: $e');
+      debugPrint('❌ AI Service: Error getting database context - $e');
+      return {}; // Return empty context if backend is unavailable
     }
   }
 
-  // Get product recommendations
-  static Future<Map<String, dynamic>> getProductRecommendations(
-    int productId,
-  ) async {
-    try {
-      debugPrint(
-        '🤖 AI Service: Getting product recommendations for product $productId...',
-      );
-      final response = await http.get(
-        Uri.parse('$baseUrl/product-recommendations/$productId/'),
-        headers: _headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        debugPrint('✅ AI Service: Product recommendations received');
-        return data['data'];
-      } else {
-        debugPrint(
-          '❌ AI Service: Failed to get product recommendations - ${response.statusCode}',
-        );
-        throw Exception('Failed to get product recommendations');
-      }
-    } catch (e) {
-      debugPrint('❌ AI Service: Error getting product recommendations - $e');
-      throw Exception('Network error: $e');
-    }
-  }
-
-  // Generate AI response based on user message using the new chat endpoint
+  // Generate AI response using Rev21 Labs API with database context
   static Future<String> generateAIResponse(String userMessage) async {
     try {
-      debugPrint(
-        '🤖 AI Service: Sending message to chat endpoint: $userMessage',
-      );
+      debugPrint('🤖 AI Service: Processing message with Rev21 Labs AI...');
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/chat/'),
-        headers: _headers,
-        body: json.encode({'message': userMessage}),
-      );
+      // Ensure Rev21 Labs session is initialized
+      final sessionId = await _initializeSession();
+
+      // Get database context from backend
+      final dbContext = await _getDatabaseContext();
+
+      // Prepare the enhanced message with database context
+      String enhancedMessage = userMessage;
+      if (dbContext.isNotEmpty) {
+        enhancedMessage =
+            '''
+User Question: $userMessage
+
+Current Pharmacy Database Context:
+${json.encode(dbContext)}
+
+Please provide a response based on the user's question and the current pharmacy data above. Focus on giving specific, actionable insights based on the real data provided.
+''';
+      }
+
+      // Prepare headers with session ID
+      final headers = Map<String, String>.from(_rev21Headers);
+      headers['session-id'] = sessionId;
+
+      debugPrint('🔍 Sending enhanced message to Rev21 Labs AI...');
+      final response = await http
+          .post(
+            Uri.parse('$_rev21BaseUrl/ai/chat'),
+            headers: headers,
+            body: json.encode({'content': enhancedMessage}),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final aiResponse = data['data']['message'];
-        debugPrint('✅ AI Service: Chat response received');
+        final aiResponse = data['content'];
+        debugPrint('✅ AI Service: Rev21 Labs AI response received');
         return aiResponse;
       } else {
         debugPrint(
-          '❌ AI Service: Chat endpoint failed - ${response.statusCode}',
+          '❌ AI Service: Rev21 Labs AI endpoint failed - ${response.statusCode}',
         );
-        throw Exception('Failed to get chat response');
+        debugPrint('Response: ${response.body}');
+        throw Exception('Failed to get AI response');
       }
     } catch (e) {
-      debugPrint('❌ AI Service: Error in chat endpoint - $e');
+      debugPrint('❌ AI Service: Error in Rev21 Labs AI endpoint - $e');
       return "I'm having trouble connecting to the AI system right now. Please try again later or check your connection.";
     }
   }
 
-  // Get chat history
+  // Get chat history (not available with Rev21 Labs API, but keeping for compatibility)
   static Future<List<Map<String, dynamic>>> getChatHistory() async {
-    try {
-      debugPrint('🤖 AI Service: Getting chat history...');
-      final response = await http.get(
-        Uri.parse('$baseUrl/chat/history/'),
-        headers: _headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        debugPrint('✅ AI Service: Chat history received');
-        return List<Map<String, dynamic>>.from(data['data']['history']);
-      } else {
-        debugPrint(
-          '❌ AI Service: Failed to get chat history - ${response.statusCode}',
-        );
-        throw Exception('Failed to get chat history');
-      }
-    } catch (e) {
-      debugPrint('❌ AI Service: Error getting chat history - $e');
-      throw Exception('Network error: $e');
-    }
+    debugPrint('🤖 AI Service: Chat history not available with Rev21 Labs API');
+    return [];
   }
 
-  // Clear chat history
+  // Clear chat history (reset session)
   static Future<void> clearChatHistory() async {
     try {
-      debugPrint('🤖 AI Service: Clearing chat history...');
-      final response = await http.post(
-        Uri.parse('$baseUrl/chat/clear/'),
-        headers: _headers,
-      );
-
-      if (response.statusCode == 200) {
-        debugPrint('✅ AI Service: Chat history cleared');
-      } else {
-        debugPrint(
-          '❌ AI Service: Failed to clear chat history - ${response.statusCode}',
-        );
-        throw Exception('Failed to clear chat history');
-      }
+      debugPrint('🤖 AI Service: Clearing Rev21 Labs chat session...');
+      _sessionId = null; // Reset session
+      debugPrint('✅ AI Service: Rev21 Labs session cleared');
     } catch (e) {
-      debugPrint('❌ AI Service: Error clearing chat history - $e');
+      debugPrint('❌ AI Service: Error clearing Rev21 Labs session - $e');
       throw Exception('Network error: $e');
     }
   }
+
+  // Note: This hybrid approach uses Rev21 Labs for conversational AI
+  // while leveraging your backend database for real-time pharmacy data
 }

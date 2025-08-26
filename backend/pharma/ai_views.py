@@ -3,14 +3,106 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import JsonResponse
+from django.db.models import Sum, Count, Avg, Q, F
+from django.utils import timezone
+from datetime import timedelta
+from .models import Product, Inventory, Transaction, Category, Supplier
 from .ai_agent import PharmacyAIAgent
 from .ai_chat import PharmacyAIChat
 import logging
 
 logger = logging.getLogger(__name__)
 
+# Initialize AI Agent instance
+ai_agent = PharmacyAIAgent()
+
 # Initialize AI Chat instance
 ai_chat_instance = PharmacyAIChat()
+
+@api_view(['GET'])
+@permission_classes([])  # Allow unauthenticated access for external API calls
+def get_database_context(request):
+    """
+    Provide database context for external AI services
+    This endpoint returns current pharmacy data that can be used by Rev21 Labs API
+    """
+    try:
+        # Get current inventory data
+        total_products = Product.objects.count()
+        total_categories = Category.objects.count()
+        total_suppliers = Supplier.objects.count()
+        
+        # Get inventory summary
+        inventory_summary = Inventory.objects.aggregate(
+            total_items=Sum('quantity'),
+            total_value=Sum(F('quantity') * F('product__unit_price')),
+            low_stock_count=Count('id', filter=Q(quantity__lte=F('product__reorder_level'))),
+            out_of_stock_count=Count('id', filter=Q(quantity=0))
+        )
+        
+        # Get recent transactions
+        recent_transactions = Transaction.objects.select_related('product').order_by('-created_at')[:10]
+        transactions_data = []
+        for trans in recent_transactions:
+            transactions_data.append({
+                'product_name': trans.product.name,
+                'transaction_type': trans.transaction_type,
+                'quantity': trans.quantity,
+                'timestamp': trans.created_at.isoformat(),
+                'total_amount': trans.quantity * trans.unit_price
+            })
+        
+        # Get low stock items
+        low_stock_items = Inventory.objects.select_related('product').filter(
+            quantity__lte=F('product__reorder_level')
+        )[:10]
+        low_stock_data = []
+        for item in low_stock_items:
+            low_stock_data.append({
+                'product_name': item.product.name,
+                'current_quantity': item.quantity,
+                'reorder_level': item.product.reorder_level,
+                'category': item.product.category.name if item.product.category else 'Uncategorized'
+            })
+        
+        # Get top products by category
+        categories_data = []
+        categories = Category.objects.all()
+        for category in categories:
+            products_in_category = Product.objects.filter(category=category).count()
+            categories_data.append({
+                'category_name': category.name,
+                'product_count': products_in_category
+            })
+        
+        # Compile all data
+        context_data = {
+            'summary': {
+                'total_products': total_products,
+                'total_categories': total_categories,
+                'total_suppliers': total_suppliers,
+                'total_inventory_items': inventory_summary['total_items'] or 0,
+                'total_inventory_value': float(inventory_summary['total_value'] or 0),
+                'low_stock_count': inventory_summary['low_stock_count'] or 0,
+                'out_of_stock_count': inventory_summary['out_of_stock_count'] or 0
+            },
+            'low_stock_items': low_stock_data,
+            'recent_transactions': transactions_data,
+            'categories': categories_data,
+            'timestamp': timezone.now().isoformat()
+        }
+        
+        return Response({
+            'success': True,
+            'data': context_data,
+            'message': 'Database context retrieved successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting database context: {e}")
+        return Response({
+            'error': f'Failed to retrieve database context: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticatedOrReadOnly])
