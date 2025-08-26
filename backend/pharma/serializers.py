@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import Category, Supplier, Product, Inventory, Transaction
+
+from .models import Category, Inventory, Product, Supplier, Transaction
+
 
 class CategorySerializer(serializers.ModelSerializer):
     """Serializer for Category model"""
@@ -62,7 +64,8 @@ class InventorySerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_sku = serializers.CharField(source='product.sku', read_only=True)
     unit_price = serializers.DecimalField(source='product.unit_price', max_digits=10, decimal_places=2, read_only=True)
-
+    total_value  = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True, source='total_value_db')
+    
     class Meta:
         model = Inventory
         fields = ['id', 'product', 'product_name', 'product_sku', 'quantity', 
