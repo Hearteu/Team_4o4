@@ -1,6 +1,10 @@
-from django.db import models
-from django.core.validators import MinValueValidator
 from decimal import Decimal
+
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.utils import timezone
+
 
 class Category(models.Model):
     """Product categories for organizing inventory"""
@@ -75,6 +79,42 @@ class Inventory(models.Model):
         """Check if stock is below reorder level"""
         return self.quantity <= self.product.reorder_level
 
+class StockBatch(models.Model):
+    """Per-lot inventory with its own expiry"""
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='batches')
+    lot_number = models.CharField(max_length=100, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)  
+    quantity = models.PositiveIntegerField(default=0)
+    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True, related_name='batches')
+    received_at = models.DateTimeField(default=timezone.now)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['expiry_date', 'created_at']
+        indexes = [
+            models.Index(fields=['product', 'expiry_date']),
+            models.Index(fields=['product', 'lot_number']),
+        ]
+        constraints = []
+
+    def __str__(self):
+        exp = self.expiry_date.isoformat() if self.expiry_date else "no-expiry"
+        return f"{self.product.sku} [{self.lot_number or 'LOT?'}] exp:{exp} qty:{self.quantity}"
+
+    @property
+    def is_expired(self):
+        return bool(self.expiry_date and self.expiry_date < timezone.now().date())
+
+    @property
+    def days_to_expiry(self):
+        if not self.expiry_date:
+            return None
+        return (self.expiry_date - timezone.now().date()).days
+
+
 class Transaction(models.Model):
     """Inventory transactions (in/out)"""
     TRANSACTION_TYPES = [
@@ -84,6 +124,7 @@ class Transaction(models.Model):
     ]
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='transactions')
+    batch = models.ForeignKey(StockBatch, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
     quantity = models.IntegerField(help_text="Positive for IN, negative for OUT")
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -97,13 +138,68 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.get_transaction_type_display()} - {self.product.name}: {self.quantity}"
 
+    def clean(self):
+        if self.transaction_type == 'IN' and self.quantity < 0:
+            raise ValidationError("IN transactions must have positive quantity.")
+        if self.transaction_type == 'OUT' and self.quantity > 0:
+            raise ValidationError("OUT transactions must have negative quantity.")
+        if self.batch and self.batch.product_id != self.product_id:
+            raise ValidationError("Selected batch does not belong to this product.")
+
+    def _get_fefo_batch(self, required_qty):
+        """
+        Pick the earliest-expiring batch with sufficient qty (FEFO).
+        Simple version: must fit in a single batch; else raise.
+        """
+        return (StockBatch.objects
+                .select_for_update()
+                .filter(product=self.product, quantity__gte=required_qty)
+                .order_by('expiry_date', 'created_at')
+                .first())
+
     def save(self, *args, **kwargs):
-        """Override save to update inventory levels"""
+        """Override save to update inventory and (now) batch levels."""
         is_new = self.pk is None
+
+        self.clean()
+
         super().save(*args, **kwargs)
-        
+
         if is_new:
-            # Update inventory levels
-            inventory, created = Inventory.objects.get_or_create(product=self.product)
-            inventory.quantity += self.quantity
-            inventory.save()
+            inventory, _ = Inventory.objects.get_or_create(product=self.product)
+
+            if self.transaction_type == 'IN':
+                if self.batch is None:
+                    self.batch = StockBatch.objects.create(
+                        product=self.product,
+                        quantity=0,  
+                    )
+                    
+                    Transaction.objects.filter(pk=self.pk).update(batch=self.batch)
+
+                self.batch.quantity += self.quantity
+                self.batch.save(update_fields=['quantity'])
+
+                inventory.quantity += self.quantity
+                inventory.save(update_fields=['quantity'])
+
+            elif self.transaction_type == 'OUT':
+                needed = abs(self.quantity)
+
+                if self.batch:
+                    if self.batch.quantity < needed:
+                        raise ValidationError(
+                            f"Batch {self.batch.id} has only {self.batch.quantity}, but {needed} requested."
+                        )
+                    self.batch.quantity -= needed
+                    self.batch.save(update_fields=['quantity'])
+                else:
+                    fefo = self._get_fefo_batch(needed)
+                    if not fefo:
+                        raise ValidationError("No batch with sufficient quantity for FEFO allocation.")
+                    fefo.quantity -= needed
+                    fefo.save(update_fields=['quantity'])
+                    Transaction.objects.filter(pk=self.pk).update(batch=fefo)
+
+                inventory.quantity = max(0, inventory.quantity - needed)
+                inventory.save(update_fields=['quantity'])

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from .models import Category, Inventory, Product, Supplier, Transaction
+from .models import (Category, Inventory, Product, StockBatch, Supplier,
+                     Transaction)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -73,17 +74,34 @@ class InventorySerializer(serializers.ModelSerializer):
         """Calculate if stock is low based on reorder level"""
         return obj.quantity <= obj.product.reorder_level
 
+class StockBatchSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_sku  = serializers.CharField(source='product.sku', read_only=True)
+    is_expired   = serializers.SerializerMethodField()
+    days_to_expiry = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StockBatch
+        fields = ['id', 'product', 'product_name', 'product_sku',
+                  'lot_number', 'expiry_date', 'quantity', 'unit_cost',
+                  'supplier', 'received_at', 'is_expired', 'days_to_expiry',
+                  'created_at', 'updated_at']
+
+    def get_is_expired(self, obj): return obj.is_expired
+    def get_days_to_expiry(self, obj): return obj.days_to_expiry
+
 class TransactionSerializer(serializers.ModelSerializer):
-    """Serializer for Transaction model"""
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_sku = serializers.CharField(source='product.sku', read_only=True)
     transaction_type_display = serializers.CharField(source='get_transaction_type_display', read_only=True)
+    batch_lot = serializers.CharField(source='batch.lot_number', read_only=True)
+    batch_expiry = serializers.DateField(source='batch.expiry_date', read_only=True)
 
     class Meta:
         model = Transaction
         fields = ['id', 'product', 'product_name', 'product_sku', 'transaction_type',
-                 'transaction_type_display', 'quantity', 'unit_price', 'reference',
-                 'notes', 'created_at']
+                  'transaction_type_display', 'quantity', 'unit_price', 'reference',
+                  'notes', 'batch', 'batch_lot', 'batch_expiry', 'created_at']
 
     def validate_quantity(self, value):
         """Validate quantity based on transaction type"""
@@ -99,7 +117,6 @@ class TransactionSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """Additional validation for transactions"""
         if data.get('transaction_type') == 'OUT':
-            # Check if there's enough stock for stock out
             product = data.get('product')
             quantity = abs(data.get('quantity'))
             
@@ -114,7 +131,6 @@ class TransactionSerializer(serializers.ModelSerializer):
         
         return data
 
-# Nested serializers for detailed views
 class ProductDetailSerializer(ProductSerializer):
     """Detailed product serializer with nested data"""
     category = CategorySerializer(read_only=True)

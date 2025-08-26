@@ -9,19 +9,19 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .filters import InventoryFilter
-from .models import Category, Inventory, Product, Supplier, Transaction
+from .models import (Category, Inventory, Product, StockBatch, Supplier,
+                     Transaction)
 from .serializers import (CategoryDetailSerializer, CategorySerializer,
                           InventorySerializer, ProductDetailSerializer,
-                          ProductSerializer, SupplierDetailSerializer,
-                          SupplierSerializer, TransactionSerializer)
+                          ProductSerializer, StockBatchSerializer,
+                          SupplierDetailSerializer, SupplierSerializer,
+                          TransactionSerializer)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     """ViewSet for Category CRUD operations"""
-    # Annotate so ordering by product_count works
     def get_queryset(self):
-        # requires related_name='products' on Product.category
         return Category.objects.annotate(product_count=Count('products'))
 
     serializer_class = CategorySerializer
@@ -37,7 +37,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def products(self, request, pk=None):
         """Get all products in a category"""
         category = self.get_object()
-        products = category.products.all()  # if no related_name, use category.product_set.all()
+        products = category.products.all()
         return Response(ProductSerializer(products, many=True).data)
 
     @action(detail=False, methods=['get'])
@@ -55,9 +55,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class SupplierViewSet(viewsets.ModelViewSet):
     queryset = Supplier.objects.all()
     """ViewSet for Supplier CRUD operations"""
-    # Annotate so ordering by product_count works
     def get_queryset(self):
-        # requires related_name='products' on Product.supplier
         return Supplier.objects.annotate(product_count=Count('products'))
 
     serializer_class = SupplierSerializer
@@ -74,7 +72,7 @@ class SupplierViewSet(viewsets.ModelViewSet):
     def products(self, request, pk=None):
         """Get all products from a supplier"""
         supplier = self.get_object()
-        products = supplier.products.all()  # if no related_name, use supplier.product_set.all()
+        products = supplier.products.all()
         return Response(ProductSerializer(products, many=True).data)
 
     @action(detail=False, methods=['get'])
@@ -86,7 +84,6 @@ class SupplierViewSet(viewsets.ModelViewSet):
 
 class ProductViewSet(viewsets.ModelViewSet):
     """ViewSet for Product CRUD operations"""
-    # Use select_related for OneToOne inventory and annotate current_stock for ordering/filtering
     queryset = (Product.objects
         .select_related('category', 'supplier')
         .annotate(current_stock=F('inventory__quantity')))
@@ -154,6 +151,15 @@ class ProductViewSet(viewsets.ModelViewSet):
             )
         return Response(TransactionSerializer(txn).data, status=status.HTTP_201_CREATED)
 
+class StockBatchViewSet(viewsets.ModelViewSet):
+    queryset = (StockBatch.objects
+                .select_related('product', 'supplier', 'product__category'))
+    serializer_class = StockBatchSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['product', 'product__category', 'supplier', 'expiry_date']
+    search_fields = ['lot_number', 'product__name', 'product__sku']
+    ordering_fields = ['expiry_date', 'quantity', 'received_at', 'updated_at']
+    ordering = ['expiry_date']
 
 class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for Inventory read operations"""
@@ -167,7 +173,7 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
         ))
     serializer_class = InventorySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_class = InventoryFilter  # supports ?is_low_stock=true
+    filterset_class = InventoryFilter
     search_fields = ['product__name', 'product__sku']
     ordering_fields = ['quantity', 'last_updated', 'total_value_db']
     ordering = ['-quantity']
