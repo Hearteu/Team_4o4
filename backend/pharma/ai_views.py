@@ -4,9 +4,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.http import JsonResponse
 from .ai_agent import PharmacyAIAgent
+from .ai_chat import PharmacyAIChat
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Initialize AI Chat instance
+ai_chat_instance = PharmacyAIChat()
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticatedOrReadOnly])
@@ -43,17 +47,9 @@ def ai_demand_forecast(request):
     Get AI-powered demand forecasting
     """
     try:
-        ai_agent = PharmacyAIAgent()
-        
-        # Get parameters from request
-        product_id = request.GET.get('product_id')
         days = int(request.GET.get('days', 30))
-        
-        if product_id:
-            product_id = int(product_id)
-            forecast_data = ai_agent.forecast_demand(product_id=product_id, days=days)
-        else:
-            forecast_data = ai_agent.forecast_demand(days=days)
+        ai_agent = PharmacyAIAgent()
+        forecast_data = ai_agent.forecast_demand(days=days)
         
         if 'error' in forecast_data:
             return Response(
@@ -92,12 +88,12 @@ def ai_inventory_optimization(request):
         return Response({
             'success': True,
             'data': optimization_data,
-            'message': 'Inventory optimization analysis completed successfully'
+            'message': 'Inventory optimization completed successfully'
         })
     except Exception as e:
         logger.error(f"Error in AI inventory optimization endpoint: {e}")
         return Response(
-            {'error': 'Failed to generate inventory optimization'}, 
+            {'error': 'Failed to optimize inventory'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -109,11 +105,7 @@ def ai_sales_trends(request):
     """
     try:
         ai_agent = PharmacyAIAgent()
-        
-        # Get parameters from request
-        days = int(request.GET.get('days', 30))
-        
-        trends_data = ai_agent.predict_sales_trends(days=days)
+        trends_data = ai_agent.predict_sales_trends()
         
         if 'error' in trends_data:
             return Response(
@@ -137,7 +129,7 @@ def ai_sales_trends(request):
 @permission_classes([IsAuthenticatedOrReadOnly])
 def ai_comprehensive_insights(request):
     """
-    Get comprehensive AI insights for the pharmacy
+    Get comprehensive AI insights
     """
     try:
         ai_agent = PharmacyAIAgent()
@@ -152,7 +144,7 @@ def ai_comprehensive_insights(request):
         return Response({
             'success': True,
             'data': insights_data,
-            'message': 'Comprehensive AI insights generated successfully'
+            'message': 'Comprehensive insights generated successfully'
         })
     except Exception as e:
         logger.error(f"Error in AI comprehensive insights endpoint: {e}")
@@ -165,11 +157,10 @@ def ai_comprehensive_insights(request):
 @permission_classes([IsAuthenticatedOrReadOnly])
 def ai_product_recommendations(request, product_id):
     """
-    Get AI recommendations for a specific product
+    Get AI-powered product recommendations
     """
     try:
         ai_agent = PharmacyAIAgent()
-        
         # Get demand forecast for the product
         forecast = ai_agent.forecast_demand(product_id=product_id, days=30)
         
@@ -206,18 +197,26 @@ def ai_product_recommendations(request, product_id):
                 'priority': 'medium'
             })
         
+        recommendations_data = {
+            'product_id': product_id,
+            'forecast': forecast,
+            'recommendations': recommendations,
+            'summary': {
+                'total_recommendations': len(recommendations),
+                'high_priority_count': len([r for r in recommendations if r['priority'] == 'high']),
+                'risk_level': 'high' if forecast.get('stockout_risk', 0) > 0.3 else 'medium' if forecast.get('stockout_risk', 0) > 0.1 else 'low'
+            }
+        }
+        
+        if 'error' in recommendations_data:
+            return Response(
+                {'error': recommendations_data['error']}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
         return Response({
             'success': True,
-            'data': {
-                'product_id': product_id,
-                'forecast': forecast,
-                'recommendations': recommendations,
-                'summary': {
-                    'total_recommendations': len(recommendations),
-                    'high_priority_count': len([r for r in recommendations if r['priority'] == 'high']),
-                    'risk_level': 'high' if forecast.get('stockout_risk', 0) > 0.3 else 'medium' if forecast.get('stockout_risk', 0) > 0.1 else 'low'
-                }
-            },
+            'data': recommendations_data,
             'message': 'Product recommendations generated successfully'
         })
     except Exception as e:
@@ -231,11 +230,10 @@ def ai_product_recommendations(request, product_id):
 @permission_classes([IsAuthenticatedOrReadOnly])
 def ai_alert_summary(request):
     """
-    Get AI-powered alert summary for critical issues
+    Get AI-powered alert summary
     """
     try:
         ai_agent = PharmacyAIAgent()
-        
         # Get system health
         health = ai_agent.get_system_health_score()
         
@@ -278,15 +276,23 @@ def ai_alert_summary(request):
                 'action': 'Place urgent reorders immediately'
             })
         
+        alert_data = {
+            'total_alerts': len(alerts),
+            'critical_alerts': len([a for a in alerts if a['severity'] == 'critical']),
+            'high_alerts': len([a for a in alerts if a['severity'] == 'high']),
+            'alerts': alerts,
+            'last_updated': ai_agent.get_ai_insights().get('generated_at', '')
+        }
+        
+        if 'error' in alert_data:
+            return Response(
+                {'error': alert_data['error']}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
         return Response({
             'success': True,
-            'data': {
-                'total_alerts': len(alerts),
-                'critical_alerts': len([a for a in alerts if a['severity'] == 'critical']),
-                'high_alerts': len([a for a in alerts if a['severity'] == 'high']),
-                'alerts': alerts,
-                'last_updated': ai_agent.get_ai_insights().get('generated_at', '')
-            },
+            'data': alert_data,
             'message': 'Alert summary generated successfully'
         })
     except Exception as e:
@@ -295,3 +301,76 @@ def ai_alert_summary(request):
             {'error': 'Failed to generate alert summary'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+@api_view(['POST'])
+@permission_classes([])
+def ai_chat(request):
+    """
+    AI Chat endpoint for conversational pharmacy assistance
+    """
+    try:
+        message = request.data.get('message', '').strip()
+        
+        if not message:
+            return Response({
+                'error': 'Message is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Process message through AI chat
+        response = ai_chat_instance.process_message(message)
+        
+        return Response({
+            'success': True,
+            'data': response,
+            'message': 'Chat response generated successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in AI chat endpoint: {e}")
+        return Response({
+            'error': 'Failed to process chat message'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([])
+def ai_chat_history(request):
+    """
+    Get AI chat conversation history
+    """
+    try:
+        history = ai_chat_instance.get_conversation_history()
+        
+        return Response({
+            'success': True,
+            'data': {
+                'history': history,
+                'total_messages': len(history)
+            },
+            'message': 'Chat history retrieved successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in AI chat history endpoint: {e}")
+        return Response({
+            'error': 'Failed to retrieve chat history'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([])
+def ai_chat_clear(request):
+    """
+    Clear AI chat conversation history
+    """
+    try:
+        ai_chat_instance.clear_history()
+        
+        return Response({
+            'success': True,
+            'message': 'Chat history cleared successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in AI chat clear endpoint: {e}")
+        return Response({
+            'error': 'Failed to clear chat history'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -30,4 +30,9 @@ urlpatterns = [
     path('api/ai/comprehensive-insights/', ai_views.ai_comprehensive_insights, name='ai_comprehensive_insights'),
     path('api/ai/product-recommendations/<int:product_id>/', ai_views.ai_product_recommendations, name='ai_product_recommendations'),
     path('api/ai/alert-summary/', ai_views.ai_alert_summary, name='ai_alert_summary'),
+    
+    # AI Chat endpoints
+    path('api/ai/chat/', ai_views.ai_chat, name='ai_chat'),
+    path('api/ai/chat/history/', ai_views.ai_chat_history, name='ai_chat_history'),
+    path('api/ai/chat/clear/', ai_views.ai_chat_clear, name='ai_chat_clear'),
 ]
