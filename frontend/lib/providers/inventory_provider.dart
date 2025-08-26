@@ -222,20 +222,28 @@ class InventoryProvider with ChangeNotifier {
 
   Future<void> _loadProductStats() async {
     // Calculate real statistics from actual data
-    final lowStockCount = _products.where((product) => product.isLowStock).length;
-    final outOfStockCount = _products.where((product) => product.currentStock == 0).length;
-    
+    final lowStockCount = _products
+        .where((product) => product.isLowStock)
+        .length;
+    final outOfStockCount = _products
+        .where((product) => product.currentStock == 0)
+        .length;
+
     debugPrint('🔍 Low stock calculation:');
     debugPrint('   Total products: ${_products.length}');
     debugPrint('   Low stock products: $lowStockCount');
     debugPrint('   Out of stock products: $outOfStockCount');
-    
+
     // Log low stock products for debugging
-    final lowStockProducts = _products.where((product) => product.isLowStock).toList();
+    final lowStockProducts = _products
+        .where((product) => product.isLowStock)
+        .toList();
     for (var product in lowStockProducts) {
-      debugPrint('   Low stock product: ${product.name} (Qty: ${product.currentStock}, isLowStock: ${product.isLowStock})');
+      debugPrint(
+        '   Low stock product: ${product.name} (Qty: ${product.currentStock}, isLowStock: ${product.isLowStock})',
+      );
     }
-    
+
     _productStats = {
       'total_products': _products.length,
       'active_products': _products.where((p) => p.isActive).length,
@@ -258,8 +266,12 @@ class InventoryProvider with ChangeNotifier {
     _inventorySummary = {
       'total_items': _inventory.fold(0, (sum, item) => sum + item.quantity),
       'total_value': _inventory.fold(0.0, (sum, item) => sum + item.totalValue),
-      'low_stock_count': _products.where((product) => product.isLowStock).length,
-      'out_of_stock_count': _products.where((product) => product.currentStock == 0).length,
+      'low_stock_count': _products
+          .where((product) => product.isLowStock)
+          .length,
+      'out_of_stock_count': _products
+          .where((product) => product.currentStock == 0)
+          .length,
       'categories_count': _categories.length,
     };
   }
@@ -373,6 +385,37 @@ class InventoryProvider with ChangeNotifier {
       _setLoading(true);
       final product = await ApiService.createProduct(productData);
       _products.add(product);
+      _setError(null);
+    } catch (e) {
+      _setError(e.toString());
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Update product
+  Future<void> updateProduct(int id, Map<String, dynamic> productData) async {
+    try {
+      _setLoading(true);
+      final updatedProduct = await ApiService.updateProduct(id, productData);
+      final index = _products.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        _products[index] = updatedProduct;
+      }
+      _setError(null);
+    } catch (e) {
+      _setError(e.toString());
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Delete product
+  Future<void> deleteProduct(int id) async {
+    try {
+      _setLoading(true);
+      await ApiService.deleteProduct(id);
+      _products.removeWhere((p) => p.id == id);
       _setError(null);
     } catch (e) {
       _setError(e.toString());
@@ -508,8 +551,12 @@ class InventoryProvider with ChangeNotifier {
       'total_categories': _categories.length,
       'total_suppliers': _suppliers.length,
       'total_transactions': _transactions.length,
-      'low_stock_items': _products.where((product) => product.isLowStock).length,
-      'out_of_stock_items': _products.where((product) => product.currentStock == 0).length,
+      'low_stock_items': _products
+          .where((product) => product.isLowStock)
+          .length,
+      'out_of_stock_items': _products
+          .where((product) => product.currentStock == 0)
+          .length,
       'total_inventory_value': _inventory.fold(
         0.0,
         (sum, item) => sum + item.totalValue,
