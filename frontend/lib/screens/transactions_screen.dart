@@ -9,7 +9,7 @@ class TransactionsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Transactions'),
+        title: const Text('MedEase Transactions'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),

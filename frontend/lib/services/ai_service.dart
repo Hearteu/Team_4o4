@@ -105,6 +105,46 @@ Current Pharmacy Database Context:
 ${json.encode(dbContext)}
 
 Instructions: You have access to the complete pharmacy inventory data including all products, quantities, prices, and categories. When asked about specific products (like "dental floss"), search through the inventory_items array to find matching products. Provide specific details about quantities, prices, stock status, and categories. If a product is not found, clearly state that it's not in the current inventory.
+
+FORMATTING GUIDELINES:
+1. Always display all monetary values using Philippine Peso (P) currency symbol. Never use \$ (US Dollar) symbol.
+2. Use clean, readable formatting with proper spacing and line breaks.
+3. For product listings, use this detailed bullet format:
+   • Product Name
+     - Price: PXX.XX
+     - Quantity: XX
+     - Stock Status: Low/Normal/Out
+     - Total Value: PXX.XX
+4. For rankings, use numbered lists with detailed bullets:
+   1. Product Name
+      - Price: PXX.XX
+      - Quantity: XX
+      - Total Value: PXX.XX
+5. Use bullet points (•) for general lists and categories.
+6. Avoid creating tables or complex formatting that might display poorly.
+7. Use clear section headers with dashes or colons.
+8. Keep responses concise but informative.
+9. Use proper spacing between sections for better readability.
+10. NEVER show internal processing notes like "updating order", "corrected", "note:", or any debugging information.
+11. Provide clean, final answers without showing your thought process or corrections.
+12. If you need to correct rankings, just present the final correct list without mentioning the correction process.
+
+Examples:
+• Dental Floss
+  - Price: P3.99
+  - Quantity: 179
+  - Stock Status: Low
+  - Total Value: P714.21
+
+• Top 5 Products by Value:
+  1. Product A
+     - Price: P1,234.56
+     - Quantity: 10
+     - Total Value: P12,345.60
+  2. Product B
+     - Price: P987.65
+     - Quantity: 15
+     - Total Value: P14,814.75
 ''';
       }
 

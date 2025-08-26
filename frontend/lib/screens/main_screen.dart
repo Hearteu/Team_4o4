@@ -6,7 +6,7 @@ import 'dashboard_screen.dart';
 import 'products_screen.dart';
 import 'inventory_screen.dart';
 import 'transactions_screen.dart';
-import 'settings_screen.dart';
+
 import '../widgets/chatbot_widget.dart';
 
 class MainScreen extends StatefulWidget {
@@ -24,7 +24,6 @@ class _MainScreenState extends State<MainScreen> {
     const ProductsScreen(),
     const InventoryScreen(),
     const TransactionsScreen(),
-    const SettingsScreen(),
   ];
 
   @override
@@ -88,11 +87,6 @@ class _MainScreenState extends State<MainScreen> {
               icon: Icon(Icons.receipt_long_outlined),
               activeIcon: Icon(Icons.receipt_long),
               label: 'Transactions',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'Settings',
             ),
           ],
         ),

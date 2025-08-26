@@ -8,7 +8,7 @@ class InventoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(title: const Text('Inventory')),
+      appBar: AppBar(title: const Text('MedEase Inventory')),
       body: const Center(
         child: Text(
           'Inventory Screen - Coming Soon!',

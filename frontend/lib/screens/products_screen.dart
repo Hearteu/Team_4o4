@@ -9,7 +9,7 @@ class ProductsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Products'),
+        title: const Text('MedEase Products'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),

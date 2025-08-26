@@ -8,20 +8,20 @@ void main() {
   // Add debug logging
   debugPrint('🚀 Starting Inventory Management App...');
 
-  runApp(const InventoryApp());
+  runApp(const MedEaseApp());
 }
 
-class InventoryApp extends StatelessWidget {
-  const InventoryApp({super.key});
+class MedEaseApp extends StatelessWidget {
+  const MedEaseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('📱 Building InventoryApp...');
+    debugPrint('📱 Building MedEaseApp...');
 
     return MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => InventoryProvider())],
       child: MaterialApp(
-        title: 'Inventory Management',
+        title: 'MedEase - Pharmacy Management',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const MainScreen(),

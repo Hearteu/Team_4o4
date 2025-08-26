@@ -29,7 +29,7 @@ class DashboardScreen extends StatelessWidget {
                   elevation: 0,
                   flexibleSpace: FlexibleSpaceBar(
                     title: Text(
-                      'Dashboard',
+                      'MedEase Dashboard',
                       style: AppTheme.heading3.copyWith(
                         color: AppTheme.textPrimary,
                       ),
@@ -175,7 +175,7 @@ class DashboardScreen extends StatelessWidget {
                 title: 'Total Value',
                 value:
                     '₱${_formatCurrency(inventorySummary['total_value'] ?? 0)}',
-                icon: Icons.attach_money,
+                icon: Icons.monetization_on,
                 color: AppTheme.successColor,
                 subtitle: 'Inventory value',
               ),
