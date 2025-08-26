@@ -103,11 +103,17 @@ class InventoryProvider with ChangeNotifier {
   Future<void> _loadTransactionsInternal() async {
     try {
       _transactions = await ApiService.getTransactions();
-      print('📋 InventoryProvider: Loaded ${_transactions.length} transactions');
-      
+      print(
+        '📋 InventoryProvider: Loaded ${_transactions.length} transactions',
+      );
+
       // Debug: Count by type
-      final stockIn = _transactions.where((t) => t.transactionType == TransactionType.IN).length;
-      final stockOut = _transactions.where((t) => t.transactionType == TransactionType.OUT).length;
+      final stockIn = _transactions
+          .where((t) => t.transactionType == TransactionType.IN)
+          .length;
+      final stockOut = _transactions
+          .where((t) => t.transactionType == TransactionType.OUT)
+          .length;
       print('  Stock IN: $stockIn, Stock OUT: $stockOut');
     } catch (e) {
       throw Exception('Failed to load transactions: $e');
@@ -227,26 +233,22 @@ class InventoryProvider with ChangeNotifier {
   }
 
   Future<void> _loadProductStats() async {
-    // Calculate real statistics from actual data
-    final lowStockCount = _products
-        .where((product) => product.isLowStock)
-        .length;
-    final outOfStockCount = _products
-        .where((product) => product.currentStock == 0)
+    // Calculate real statistics from actual inventory data
+    final lowStockCount = _inventory.where((item) => item.isLowStock).length;
+    final outOfStockCount = _inventory
+        .where((item) => item.quantity == 0)
         .length;
 
     debugPrint('🔍 Low stock calculation:');
-    debugPrint('   Total products: ${_products.length}');
-    debugPrint('   Low stock products: $lowStockCount');
-    debugPrint('   Out of stock products: $outOfStockCount');
+    debugPrint('   Total inventory items: ${_inventory.length}');
+    debugPrint('   Low stock items: $lowStockCount');
+    debugPrint('   Out of stock items: $outOfStockCount');
 
-    // Log low stock products for debugging
-    final lowStockProducts = _products
-        .where((product) => product.isLowStock)
-        .toList();
-    for (var product in lowStockProducts) {
+    // Log low stock items for debugging
+    final lowStockItems = _inventory.where((item) => item.isLowStock).toList();
+    for (var item in lowStockItems) {
       debugPrint(
-        '   Low stock product: ${product.name} (Qty: ${product.currentStock}, isLowStock: ${product.isLowStock})',
+        '   Low stock item: ${item.productName} (Qty: ${item.quantity}, isLowStock: ${item.isLowStock})',
       );
     }
 
@@ -268,15 +270,13 @@ class InventoryProvider with ChangeNotifier {
   }
 
   Future<void> _loadInventorySummary() async {
-    // Calculate real inventory summary from actual data
+    // Calculate real inventory summary from actual inventory data
     _inventorySummary = {
       'total_items': _inventory.fold(0, (sum, item) => sum + item.quantity),
       'total_value': _inventory.fold(0.0, (sum, item) => sum + item.totalValue),
-      'low_stock_count': _products
-          .where((product) => product.isLowStock)
-          .length,
-      'out_of_stock_count': _products
-          .where((product) => product.currentStock == 0)
+      'low_stock_count': _inventory.where((item) => item.isLowStock).length,
+      'out_of_stock_count': _inventory
+          .where((item) => item.quantity == 0)
           .length,
       'categories_count': _categories.length,
     };
@@ -446,14 +446,14 @@ class InventoryProvider with ChangeNotifier {
     }
   }
 
-  // Get low stock products
-  List<Product> get lowStockProducts {
-    return _products.where((product) => product.isLowStock).toList();
+  // Get low stock inventory items
+  List<Inventory> get lowStockItems {
+    return _inventory.where((item) => item.isLowStock).toList();
   }
 
-  // Get out of stock products
-  List<Product> get outOfStockProducts {
-    return _products.where((product) => product.currentStock == 0).toList();
+  // Get out of stock inventory items
+  List<Inventory> get outOfStockItems {
+    return _inventory.where((item) => item.quantity == 0).toList();
   }
 
   // Get recent transactions
@@ -557,11 +557,9 @@ class InventoryProvider with ChangeNotifier {
       'total_categories': _categories.length,
       'total_suppliers': _suppliers.length,
       'total_transactions': _transactions.length,
-      'low_stock_items': _products
-          .where((product) => product.isLowStock)
-          .length,
-      'out_of_stock_items': _products
-          .where((product) => product.currentStock == 0)
+      'low_stock_items': _inventory.where((item) => item.isLowStock).length,
+      'out_of_stock_items': _inventory
+          .where((item) => item.quantity == 0)
           .length,
       'total_inventory_value': _inventory.fold(
         0.0,

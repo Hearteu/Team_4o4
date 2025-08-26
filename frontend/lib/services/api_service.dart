@@ -6,6 +6,7 @@ import '../models/supplier.dart';
 import '../models/product.dart';
 import '../models/inventory.dart';
 import '../models/transaction.dart';
+import '../models/stock_batch.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:8000/api'; // Web localhost
@@ -361,5 +362,62 @@ class ApiService {
     final data = await _get('/transactions/?transaction_type=$type');
     final results = data['results'] as List;
     return results.map((json) => Transaction.fromJson(json)).toList();
+  }
+
+  // Stock Batch methods
+  static Future<List<StockBatch>> getStockBatches() async {
+    final data = await _get('/stock-batches/');
+    final results = data['results'] as List;
+    return results.map((json) => StockBatch.fromJson(json)).toList();
+  }
+
+  static Future<List<StockBatch>> getExpiredBatches() async {
+    final data = await _get('/stock-batches/expired/');
+    // Handle both paginated and non-paginated responses
+    final List results = data is List
+        ? data as List
+        : (data['results'] as List);
+    return results.map((json) => StockBatch.fromJson(json)).toList();
+  }
+
+  static Future<List<StockBatch>> getExpiringSoonBatches() async {
+    final data = await _get('/stock-batches/expiring_soon/');
+    // Handle both paginated and non-paginated responses
+    final List results = data is List
+        ? data as List
+        : (data['results'] as List);
+    return results.map((json) => StockBatch.fromJson(json)).toList();
+  }
+
+  static Future<List<StockBatch>> getExpiringThisWeekBatches() async {
+    final data = await _get('/stock-batches/expiring_this_week/');
+    // Handle both paginated and non-paginated responses
+    final List results = data is List
+        ? data as List
+        : (data['results'] as List);
+    return results.map((json) => StockBatch.fromJson(json)).toList();
+  }
+
+  static Future<Map<String, dynamic>> getExpirationSummary() async {
+    return await _get('/stock-batches/summary/');
+  }
+
+  static Future<StockBatch> createStockBatch(
+    Map<String, dynamic> batchData,
+  ) async {
+    final data = await _post('/stock-batches/', batchData);
+    return StockBatch.fromJson(data);
+  }
+
+  static Future<StockBatch> updateStockBatch(
+    int id,
+    Map<String, dynamic> batchData,
+  ) async {
+    final data = await _put('/stock-batches/$id/', batchData);
+    return StockBatch.fromJson(data);
+  }
+
+  static Future<void> deleteStockBatch(int id) async {
+    await _delete('/stock-batches/$id/');
   }
 }

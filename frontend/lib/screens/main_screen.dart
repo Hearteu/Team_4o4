@@ -6,6 +6,8 @@ import 'dashboard_screen.dart';
 import 'products_screen.dart';
 import 'inventory_screen.dart';
 import 'transactions_screen.dart';
+import 'export_import_screen.dart';
+import 'expiration_screen.dart';
 
 import '../widgets/chatbot_widget.dart';
 
@@ -24,6 +26,8 @@ class _MainScreenState extends State<MainScreen> {
     const ProductsScreen(),
     const InventoryScreen(),
     const TransactionsScreen(),
+    const ExportImportScreen(),
+    const ExpirationScreen(),
   ];
 
   @override
@@ -57,6 +61,8 @@ class _MainScreenState extends State<MainScreen> {
             });
           },
           type: BottomNavigationBarType.fixed,
+          selectedFontSize: 12,
+          unselectedFontSize: 10,
           backgroundColor: AppTheme.surfaceColor,
           selectedItemColor: AppTheme.primaryColor,
           unselectedItemColor: AppTheme.textTertiary,
@@ -87,6 +93,16 @@ class _MainScreenState extends State<MainScreen> {
               icon: Icon(Icons.receipt_long_outlined),
               activeIcon: Icon(Icons.receipt_long),
               label: 'Transactions',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.download_outlined),
+              activeIcon: Icon(Icons.download),
+              label: 'Export/Import',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.schedule_outlined),
+              activeIcon: Icon(Icons.schedule),
+              label: 'Expiration',
             ),
           ],
         ),

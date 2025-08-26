@@ -314,9 +314,9 @@ class DashboardScreen extends StatelessWidget {
     BuildContext context,
     InventoryProvider provider,
   ) {
-    final lowStockProducts = provider.lowStockProducts;
+    final lowStockItems = provider.lowStockItems;
 
-    if (lowStockProducts.isEmpty) {
+    if (lowStockItems.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(AppTheme.spacingL),
         decoration: AppTheme.successDecoration,
@@ -355,7 +355,7 @@ class DashboardScreen extends StatelessWidget {
               ),
               decoration: AppTheme.warningDecoration,
               child: Text(
-                '${lowStockProducts.length} items',
+                '${lowStockItems.length} items',
                 style: AppTheme.bodySmall.copyWith(
                   color: AppTheme.warningColor,
                   fontWeight: FontWeight.w600,
@@ -369,10 +369,10 @@ class DashboardScreen extends StatelessWidget {
           padding: const EdgeInsets.all(AppTheme.spacingM),
           decoration: AppTheme.warningDecoration,
           child: Column(
-            children: lowStockProducts
+            children: lowStockItems
                 .take(3)
                 .map(
-                  (product) => ListTile(
+                  (item) => ListTile(
                     leading: CircleAvatar(
                       backgroundColor: AppTheme.warningColor.withOpacity(0.1),
                       child: Icon(
@@ -382,17 +382,17 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                     title: Text(
-                      product.name,
+                      item.productName,
                       style: AppTheme.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     subtitle: Text(
-                      'SKU: ${product.sku} • Stock: ${product.currentStock}',
+                      'SKU: ${item.productSku} • Stock: ${item.quantity}',
                       style: AppTheme.bodySmall,
                     ),
                     trailing: Text(
-                      'Reorder: ${product.reorderLevel}',
+                      'Low Stock',
                       style: AppTheme.bodySmall.copyWith(
                         color: AppTheme.warningColor,
                         fontWeight: FontWeight.w600,
