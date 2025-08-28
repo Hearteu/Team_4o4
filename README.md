@@ -73,6 +73,6 @@ flutter test
 - AI agent notes: `backend/AI_AGENT_DOCUMENTATION.md`
 
 ### License
-Internal demo/hackathon project. Add a license if publishing publicly.
+Internal demo/hackathon project.
 
 
