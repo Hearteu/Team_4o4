@@ -22,7 +22,7 @@ class ImportService {
         throw Exception('Invalid CSV file: No data found');
       }
 
-      final headers = csvData[0] as List<dynamic>;
+      final headers = csvData[0];
       final data = csvData.skip(1).toList();
 
       final products = <Map<String, dynamic>>[];
@@ -84,7 +84,7 @@ class ImportService {
         throw Exception('Invalid CSV file: No data found');
       }
 
-      final headers = csvData[0] as List<dynamic>;
+      final headers = csvData[0];
       final data = csvData.skip(1).toList();
 
       final categories = <Map<String, dynamic>>[];
@@ -129,7 +129,7 @@ class ImportService {
         throw Exception('Invalid CSV file: No data found');
       }
 
-      final headers = csvData[0] as List<dynamic>;
+      final headers = csvData[0];
       final data = csvData.skip(1).toList();
 
       final suppliers = <Map<String, dynamic>>[];
@@ -187,7 +187,7 @@ class ImportService {
         throw Exception('Invalid CSV file: No data found');
       }
 
-      final headers = csvData[0] as List<dynamic>;
+      final headers = csvData[0];
       final data = csvData.skip(1).toList();
 
       final transactions = <Map<String, dynamic>>[];

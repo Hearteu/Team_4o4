@@ -298,7 +298,7 @@ class _BulkProductCard extends StatelessWidget {
             Consumer<InventoryProvider>(
               builder: (context, provider, child) {
                 return DropdownButtonFormField<Product>(
-                  value: product['product'],
+                  initialValue: product['product'],
                   decoration: const InputDecoration(
                     labelText: 'Select Product *',
                     border: OutlineInputBorder(),

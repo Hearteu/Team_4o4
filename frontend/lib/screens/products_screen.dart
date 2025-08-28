@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/inventory_provider.dart';
 import '../models/product.dart';
-import '../models/category.dart';
-import '../models/supplier.dart';
 import '../widgets/product_form.dart';
 import '../widgets/product_detail_dialog.dart';
 

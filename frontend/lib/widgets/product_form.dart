@@ -221,7 +221,7 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
                     child: Consumer<InventoryProvider>(
                       builder: (context, provider, child) {
                         return DropdownButtonFormField<Category>(
-                          value: _selectedCategory,
+                          initialValue: _selectedCategory,
                           decoration: const InputDecoration(
                             labelText: 'Category *',
                             border: OutlineInputBorder(),
@@ -246,7 +246,7 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
                     child: Consumer<InventoryProvider>(
                       builder: (context, provider, child) {
                         return DropdownButtonFormField<Supplier>(
-                          value: _selectedSupplier,
+                          initialValue: _selectedSupplier,
                           decoration: const InputDecoration(
                             labelText: 'Supplier',
                             border: OutlineInputBorder(),

@@ -858,13 +858,13 @@ class _DynamicDataScreenState extends State<DynamicDataScreen> {
                       ),
                     )
                     .toList(),
-                headingRowColor: MaterialStateProperty.all(
+                headingRowColor: WidgetStateProperty.all(
                   AppTheme.backgroundColor,
                 ),
-                dataRowColor: MaterialStateProperty.resolveWith<Color?>((
-                  Set<MaterialState> states,
+                dataRowColor: WidgetStateProperty.resolveWith<Color?>((
+                  Set<WidgetState> states,
                 ) {
-                  if (states.contains(MaterialState.selected)) {
+                  if (states.contains(WidgetState.selected)) {
                     return AppTheme.primaryColor.withOpacity(0.08);
                   }
                   return null;

@@ -1,15 +1,18 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 
 class AIService {
-  // Rev21 Labs AI API Configuration
-  static const String _rev21BaseUrl = 'https://ai-tools.rev21labs.com/api/v1';
-  static const String _apiKey =
-      'MTc0NTI4NTItYzNkYS00NmQ0LWI0MTktMDc2MmVhYjc2OWE3';
+  // Rev21 Labs AI API Configuration (read from .env)
+  static final String _rev21BaseUrl =
+      dotenv.env['REV21_BASE_URL'] ?? 'https://ai-tools.rev21labs.com/api/v1';
+  static final String _apiKey = dotenv.env['REV21_API_KEY'] ?? '';
 
-  // Backend API for database context
-  static const String _backendBaseUrl = 'http://localhost:8000/api';
+  // Backend API for database context (read from .env, fallback to localhost)
+  static final String _backendBaseUrl =
+      dotenv.env['BACKEND_BASE_URL'] ?? 'http://localhost:8000/api';
 
   // Session management
   static String? _sessionId;
@@ -18,7 +21,7 @@ class AIService {
   static Map<String, String> get _rev21Headers => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'x-api-key': _apiKey,
+    if (_apiKey.isNotEmpty) 'x-api-key': _apiKey,
   };
 
   // Headers for backend API requests
