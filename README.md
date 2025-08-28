@@ -1,5 +1,8 @@
-## Team_4o4 – Pharmacy Inventory & AI Assistant
+## Disclaimer
+This project was developed during Byte Forward 24-hour hackathon. All intellectual property rights belong to the hackathon organizers.
+This repository is for demonstration purposes only.
 
+## Team_4o4 – Pharmacy Inventory & AI Assistant
 A full‑stack app for managing pharmacy inventory with analytics and an AI chat assistant. Backend is Django REST Framework; frontend is Flutter. The AI assistant integrates with Rev21 Labs and enriches replies with live database context from the backend.
 
 ### Project structure
