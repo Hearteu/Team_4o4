@@ -1,12 +1,14 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:http/http.dart' as http;
+
 import '../models/category.dart';
-import '../models/supplier.dart';
-import '../models/product.dart';
 import '../models/inventory.dart';
-import '../models/transaction.dart';
+import '../models/product.dart';
 import '../models/stock_batch.dart';
+import '../models/supplier.dart';
+import '../models/transaction.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:8000/api'; // Web localhost
@@ -399,27 +401,21 @@ class ApiService {
   static Future<List<StockBatch>> getExpiredBatches() async {
     final data = await _getAny('/stock-batches/expired/');
     // Handle both paginated and non-paginated responses
-    final List results = data is List
-        ? data as List
-        : (data['results'] as List);
+    final List results = data is List ? data : (data['results'] as List);
     return results.map((json) => StockBatch.fromJson(json)).toList();
   }
 
   static Future<List<StockBatch>> getExpiringSoonBatches() async {
     final data = await _getAny('/stock-batches/expiring_soon/');
     // Handle both paginated and non-paginated responses
-    final List results = data is List
-        ? data as List
-        : (data['results'] as List);
+    final List results = data is List ? data : (data['results'] as List);
     return results.map((json) => StockBatch.fromJson(json)).toList();
   }
 
   static Future<List<StockBatch>> getExpiringThisWeekBatches() async {
     final data = await _getAny('/stock-batches/expiring_this_week/');
     // Handle both paginated and non-paginated responses
-    final List results = data is List
-        ? data as List
-        : (data['results'] as List);
+    final List results = data is List ? data : (data['results'] as List);
     return results.map((json) => StockBatch.fromJson(json)).toList();
   }
 
